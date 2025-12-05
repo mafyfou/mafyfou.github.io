@@ -157,9 +157,9 @@
         
         .style-rocket { border-color: #FF00FF; color: #FF00FF; }
         .style-rocket .effect-bar-fill { background: repeating-linear-gradient(45deg, #FF00FF, #FF00FF 10px, #FFFFFF 10px, #FFFFFF 20px); }
-        /* CHANGE: Shield bar is now Cyan */
         .style-shield { border-color: #00FF00; color: #00FF00; }
-        .style-shield .effect-bar-fill { background: #00FFFF; } 
+        /* CORRECTION: Barre Cyan */
+        .style-shield .effect-bar-fill { background: #00FFFF; }
         .style-drill { border-color: #FFFF00; color: #FFFF00; }
         .style-drill .effect-bar-fill { background: #FFFF00; }
 
@@ -342,6 +342,7 @@
         <div class="audio-settings-box">
             <h2 style="color:#00FFFF; margin-bottom: 20px;">PARAMETRES</h2>
             <div class="slider-group"><div class="slider-label"><span>QUALITÉ</span> <span id="res-val">AUTO</span></div><input type="range" min="50" max="300" value="0" id="res-slider" oninput="updateResolution(this.value)"></div>
+            <div class="slider-group"><div class="slider-label"><span>SENSIBILITÉ</span> <span id="sens-val">1.0</span></div><input type="range" min="0" max="2" step="0.05" value="1" oninput="updateSensitivity(this.value)"></div>
             <div class="slider-group"><div class="slider-label"><span>MUSIQUE</span> <span id="vol-music-val">40%</span></div><input type="range" min="0" max="100" value="40" oninput="updateAudioSettings('music', this.value)"></div>
             <div class="slider-group"><div class="slider-label"><span>MOTEUR</span> <span id="vol-engine-val">30%</span></div><input type="range" min="0" max="100" value="30" oninput="updateAudioSettings('engine', this.value)"></div>
             <div class="slider-group"><div class="slider-label"><span>EFFETS</span> <span id="vol-sfx-val">50%</span></div><input type="range" min="0" max="100" value="50" oninput="updateAudioSettings('sfx', this.value)"></div>
@@ -508,6 +509,12 @@
             }
         }
 
+        let inputSensitivity = 1.0;
+        function updateSensitivity(val) {
+            inputSensitivity = parseFloat(val);
+            document.getElementById('sens-val').innerText = inputSensitivity.toFixed(2);
+        }
+
         const CONFIG = { 
             baseSpeed: 1.8, maxBoostSpeed: 4.5, 
             chunkSize: 100, chunkCount: 30, 
@@ -535,7 +542,7 @@
         
         let scene, camera, renderer, plane, propeller, sunMesh, drillMesh, starField;
         let terrainChunks = [], objects = [], particles = [];
-        let score = 0, health = 100, energy = 50, gameSpeed = CONFIG.baseSpeed, distance = 0;
+        let score = 0, health = 100, energy = 100, gameSpeed = CONFIG.baseSpeed, distance = 0;
         let isPlaying = false, isPaused = false, frameCount = 0;
         
         let controlMode = 'touch'; 
@@ -602,13 +609,15 @@
 
         // Logic for probability distribution
         function getSpawnThresholds(dist) {
-            // Adjust distribution.
-            // Items: ~25%
-            // Enemies: Starts at 35%, scales to 55%
-            // Clouds: The rest (starts high ~40%, goes down to ~20%)
-            
-            let itemProbTotal = 0.25; 
-            
+            // PROBABILITY BLOCKS (Sum ~ 1.0)
+            // Cap Total Enemies to ~50-60% max to ensure items and clouds spawn
+            // Cap Items to ~20-25%
+            // Rest for Clouds (~20-25%)
+
+            let maxEnemyProb = 0.50; // Cap enemies at 50% chance
+            let itemProbTotal = 0.25; // 5 items * 0.05
+
+            // Enemy Scaling
             let enemyMult = 1.0;
             if(dist >= 2500) {
                 let t = (dist - 2500) / 7500;
@@ -718,7 +727,9 @@
         }
 
         function createVoxelPlane() {
-            plane = new THREE.Group(); const P_OPACITY = 0.9; 
+            plane = new THREE.Group(); 
+            const P_OPACITY = 0.5; // REDUCED OPACITY
+            
             // Disable shadow casting for plane components to fix shadow bug
             plane.add(createVoxelBox(2, 2, 6, 0xD32F2F, 0, 0, 0, false, P_OPACITY, false)); 
             const glassGeo = new THREE.BoxGeometry(1.8, 0.8, 1.5); const glassMat = new THREE.MeshPhongMaterial({color: 0x88CCFF, transparent: true, opacity: 0.6, flatShading: true});
@@ -872,7 +883,7 @@
         function resetGame(){ document.getElementById('game-over-screen').classList.add('hidden'); document.getElementById('mobile-controls').classList.add('hidden'); switchScreen('start-screen'); AudioSys.startMenuMusic(); }
         
         function resetLogic(){
-            score=0; distance=0; health=100; energy=50; invincibleTimer=0; birdShieldTimer=0; drillTimer=0;
+            score=0; distance=0; health=100; energy=100; invincibleTimer=0; birdShieldTimer=0; drillTimer=0;
             comboCount = 0; comboTimer = 0; currentComboMultiplier = 1.0; overdriveLevel = 0;
             document.getElementById('combo-wrapper').style.opacity = 0; document.getElementById('combo-container').classList.remove('combo-overdrive'); document.getElementById('overdrive-overlay').style.opacity = 0; document.getElementById('overdrive-overlay').classList.remove('pulsing-gold'); document.getElementById('combo-label-text').innerText = "COMBO !";
             isIntro = true; introStartTime = Date.now(); gameSpeed = 0; screenShake = 0; bounceForce = 0; wallHitTimer = 0; isInputLocked = false;
@@ -962,10 +973,10 @@
             if(isIntro) { const elapsed = Date.now() - introStartTime; engineVolMult = Math.min(1, elapsed / INTRO_DURATION_MS); }
             AudioSys.updateEngine(Math.max(0, speedRatio), engineVolMult);
 
-            const sens = 0.02 * fpsFactor;
+            const sens = 0.02 * fpsFactor * inputSensitivity;
             if (controlMode === 'touch') { mouseX += joystickInput.x * sens; mouseY += joystickInput.y * sens; } 
             else if (controlMode === 'keyboard') {
-                const kSpeedX = 0.03 * fpsFactor; const kSpeedY = 0.03 * fpsFactor;
+                const kSpeedX = 0.03 * fpsFactor * inputSensitivity; const kSpeedY = 0.03 * fpsFactor * inputSensitivity;
                 if(keyInput.x !== 0) mouseX += keyInput.x * kSpeedX; if(keyInput.y !== 0) mouseY += keyInput.y * kSpeedY;
             }
             mouseX = Math.max(-1, Math.min(1, mouseX)); mouseY = Math.max(-1, Math.min(1, mouseY));
@@ -1062,11 +1073,11 @@
                         if (invincibleTimer > 0 || (isBoosting && energy > 0)) { 
                             let pts = Math.floor(1000 * currentComboMultiplier * timeMultiplier);
                             score += pts; triggerCombo(); AudioSys.smash(); spawnParticles(o.position, 0xFFFFFF, 20); scene.remove(o); objects.splice(i,1); 
-                            spawnFloatingText("+" + pts, o.position, "#FF3333");
+                            spawnFloatingText("+" + pts, o.position, "#FFD700");
                         } else if (drillTimer > 0) { 
                             let pts = Math.floor(1000 * currentComboMultiplier * timeMultiplier);
                             score += pts; triggerCombo(); AudioSys.smash(); spawnParticles(o.position, 0xFFFFFF, 20); scene.remove(o); objects.splice(i,1); 
-                            spawnFloatingText("+" + pts, o.position, "#FF8800");
+                            spawnFloatingText("+" + pts, o.position, "#FFD700");
                         } else { takeDamage(50); } 
                     }
                     else if(o.userData.type === 'alien_laser') { if (invincibleTimer > 0) {} else { takeDamage(50); plane.position.z += 2; } }
