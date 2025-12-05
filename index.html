@@ -1033,7 +1033,7 @@
             if(terrainChunks[0].position.z > plane.position.z + CONFIG.chunkSize) { scene.remove(terrainChunks[0]); terrainChunks.shift(); terrainChunks.push(createChunk(terrainChunks[terrainChunks.length-1].position.z - CONFIG.chunkSize)); }
             
             // Dynamic Spawn Rate (FASTER TO INCREASE DENSITY)
-            let spawnRate = Math.max(10, 20 - (distance / 1000));
+            let spawnRate = Math.max(5, 20 - (distance / 1000));
             if(Math.floor(frameCount) % Math.floor(spawnRate/fpsFactor) === 0) spawnObject();
 
             for(let i=objects.length-1; i>=0; i--) {
