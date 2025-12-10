@@ -291,6 +291,10 @@
         <div class="leaderboard-container"><div style="color:#FFFF00; margin-bottom:10px;">MEILLEURS PILOTES</div><div id="lb-start"></div></div>
         
         <div class="menu-row">
+            <button class="btn btn-small" style="width:auto; background:#FFD700; color:#000;" onclick="AudioSys.unlock(); openSkinMenu()">GARAGE</button>
+        </div>
+
+        <div class="menu-row" style="margin-top:10px;">
             <button class="btn btn-small" onclick="AudioSys.unlock(); openGuide()">GUIDE</button>
             <button class="btn btn-small" onclick="AudioSys.unlock(); openAudioSettings()">PARAMETRES</button>
         </div>
@@ -301,6 +305,26 @@
             <button class="btn" onclick="startGame('mouse')">SOURIS</button>
             <button class="btn" onclick="startGame('keyboard')">CLAVIER</button>
         </div>
+    </div>
+
+    <div id="skin-screen" class="overlay-screen hidden">
+        <h2 style="color:#00FFFF; font-size:50px; margin-bottom:10px;">GARAGE</h2>
+        
+        <div id="garage-3d-container" style="width: 300px; height: 250px; background: radial-gradient(circle, #2a0e2a, #000); border: 4px solid #FF00FF; margin-bottom: 10px; position: relative; cursor: move; touch-action: none;"></div>
+        <div style="font-size: 14px; color: #AAA; margin-top: -5px; margin-bottom: 10px;">(FAITES TOURNER L'AVION)</div>
+
+        <div style="text-align:center; margin-bottom:10px;">
+            <div id="skin-name" style="font-size:30px; color:#FFF; text-shadow: 2px 2px 0 #FF00FF;">NOM DU SKIN</div>
+            <div id="skin-model-label" style="font-size:18px; color:#AAA;">MODÈLE A</div>
+        </div>
+
+        <div class="menu-row" style="align-items: center; gap: 20px;">
+            <button class="btn" style="padding: 10px 20px;" onclick="changeSkin(-1)">◀</button>
+            <button class="btn" id="select-skin-btn" style="background:#00FF00; color:#000; border-color:#005500; width: 180px;" onclick="selectSkin()">CHOISIR</button>
+            <button class="btn" style="padding: 10px 20px;" onclick="changeSkin(1)">▶</button>
+        </div>
+
+        <button class="btn btn-small" style="margin-top:20px;" onclick="closeSkinMenu()">RETOUR</button>
     </div>
 
     <div id="guide-screen" class="overlay-screen hidden">
@@ -494,6 +518,61 @@
             else if (type === 'engine') { VOLUMES.engine = decimal; document.getElementById('vol-engine-val').innerText = pct + '%'; } 
             else if (type === 'sfx') { VOLUMES.sfx = decimal; document.getElementById('vol-sfx-val').innerText = pct + '%'; }
         }
+
+function openSkinMenu() {
+            switchScreen('skin-screen');
+            previewSkinIndex = currentSkinIndex;
+            
+            // Initialisation du Garage 3D
+            initGarage3D();
+            updateGaragePlane();
+            isGarageOpen = true;
+            animateGarage();
+            
+            updateSkinPreview();
+        }
+
+        function closeSkinMenu() {
+            isGarageOpen = false; // Stop l'animation pour économiser la batterie
+            switchScreen('start-screen');
+        }
+
+        function changeSkin(dir) {
+            previewSkinIndex += dir;
+            if(previewSkinIndex < 0) previewSkinIndex = SKINS.length - 1;
+            if(previewSkinIndex >= SKINS.length) previewSkinIndex = 0;
+            
+            updateSkinPreview();
+            updateGaragePlane(); // Met à jour le modèle 3D
+        }
+
+        function updateSkinPreview() {
+            const skin = SKINS[previewSkinIndex];
+            document.getElementById('skin-name').innerText = skin.name;
+            let modelName = "STANDARD MK-1";
+            if(skin.model === 'B') modelName = "INTERCEPTOR CLASS";
+            if(skin.model === 'C') modelName = "HEAVY BOMBER";
+            document.getElementById('skin-model-label').innerText = modelName;
+            
+            const btn = document.getElementById('select-skin-btn');
+            if(previewSkinIndex === currentSkinIndex) {
+                btn.innerText = "ÉQUIPÉ";
+                btn.style.background = "#555";
+                btn.style.color = "#FFF";
+            } else {
+                btn.innerText = "CHOISIR";
+                btn.style.background = "#00FF00";
+                btn.style.color = "#000";
+            }
+        }
+
+        function selectSkin() {
+            currentSkinIndex = previewSkinIndex;
+            AudioSys.coin(); 
+            createVoxelPlane(); // Met à jour le VRAI avion du jeu
+            updateSkinPreview(); 
+        }
+
         function updateResolution(val) {
             if(val == 0 || val < 50) {
                 renderScale = 0;
@@ -538,6 +617,27 @@
                 bridge: 0x8B4513, bridgeRope: 0xD2691E
             }
         };
+
+        // --- CONFIGURATION DES SKINS ---
+        const SKINS = [
+            // MODÈLE A : Le Standard (Équilibré)
+            { name: "CLASSIC MK-1", model: 'A', colors: { main: 0xFFFFFF, sec: 0xD32F2F, glass: 0x88CCFF, glow: 0x00FFFF } },
+            { name: "NIGHT OPS",    model: 'A', colors: { main: 0x333333, sec: 0x111111, glass: 0xFF0000, glow: 0xFF0000 } },
+            { name: "GOLDEN AGE",   model: 'A', colors: { main: 0xFFD700, sec: 0x222222, glass: 0x00FFFF, glow: 0xFFD700 } },
+            
+            // MODÈLE B : L'Intercepteur (Rapide, pointu, ailes inversées)
+            { name: "SPEED DEMON",  model: 'B', colors: { main: 0xFF0055, sec: 0xFFFFFF, glass: 0x00FFFF, glow: 0xFF0055 } },
+            { name: "CYBER PUNK",   model: 'B', colors: { main: 0x00FFFF, sec: 0xFF00FF, glass: 0xFFFF00, glow: 0x00FF00 } },
+            { name: "VOID RUNNER",  model: 'B', colors: { main: 0x220044, sec: 0x000000, glass: 0xFFFFFF, glow: 0x8A2BE2 } },
+
+            // MODÈLE C : Le Bombardier (Lourd, large, double queue)
+            { name: "HEAVY METAL",  model: 'C', colors: { main: 0x5D4037, sec: 0x3E2723, glass: 0xFFA500, glow: 0xFFA500 } },
+            { name: "ARCTIC FOX",   model: 'C', colors: { main: 0xDDEEFF, sec: 0x88CCFF, glass: 0x0000FF, glow: 0x00FFFF } },
+            { name: "TOXIC HAZARD", model: 'C', colors: { main: 0x112211, sec: 0x00FF00, glass: 0x00FF00, glow: 0x00FF00 } }
+        ];
+
+        let currentSkinIndex = 0; // Le skin actuellement équipé
+        let previewSkinIndex = 0; // Celui qu'on regarde dans le menu
         
         let scene, camera, renderer, plane, propeller, sunMesh, drillMesh, starField;
         let terrainChunks = [], objects = [], particles = [];
@@ -598,11 +698,20 @@
             } else { return CONFIG.biomes[biomeIdx1]; }
         }
 
-        function getTerrainHeight(x, z) {
+       function getTerrainHeight(x, z) {
             if(!simplex) return -12;
-            let noise = simplex.noise2D(x * 0.02, z * 0.02); let h = -12; 
-            if(Math.abs(x) > 30) { let canyonH = Math.max(0, noise * 40 + (Math.abs(x) - 30) * 1.5); h += Math.floor(canyonH / 4) * 4; }
-            if (z < -300) { let spikeNoise = simplex.noise2D(x * 0.08, z * 0.08); if (spikeNoise > 0.82 && Math.abs(x) < 25) { let spikeH = (spikeNoise - 0.82) * 115; h += Math.floor(spikeH / 4) * 4; } }
+            let noise = simplex.noise2D(x * 0.02, z * 0.02); 
+            let h = -12; 
+            
+            // Canyons sur les côtés (Hauteur progressive)
+            if(Math.abs(x) > 30) { 
+                let canyonH = Math.max(0, noise * 40 + (Math.abs(x) - 30) * 1.5); 
+                h += Math.floor(canyonH / 4) * 4; 
+            }
+            
+            // NOTE : J'ai supprimé la logique "SpikeNoise" ici.
+            // Le sol est maintenant plus plat pour accueillir nos nouveaux objets 3D.
+            
             return h;
         }
 
@@ -672,14 +781,62 @@
             let camZ = 32; if(window.innerHeight > window.innerWidth) camZ = 45; 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 3000); camera.position.set(0, 8, 25);
             
-            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true }); 
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight); 
             const ratio = renderScale === 0 ? Math.min(window.devicePixelRatio, 3) : renderScale; renderer.setPixelRatio(ratio);
-            renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.BasicShadowMap; document.body.appendChild(renderer.domElement);
+            
+            // ACTIVER LES OMBRES
+            renderer.shadowMap.enabled = true; 
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+            document.body.appendChild(renderer.domElement);
 
-            const sunLight = new THREE.DirectionalLight(0xffeba1, 1.2); sunLight.position.set(50, 80, 50); sunLight.castShadow = true; sunLight.shadow.mapSize.width = 1024; sunLight.shadow.mapSize.height = 1024; sunLight.shadow.camera.left = -100; sunLight.shadow.camera.right = 100; scene.add(sunLight); 
-            const ambient = new THREE.AmbientLight(0xffaf7b, 0.6); scene.add(ambient);
-            const sunGeo = new THREE.CircleGeometry(60, 32); const sunMat = new THREE.MeshBasicMaterial({ color: 0xFFFF00 }); sunMesh = new THREE.Mesh(sunGeo, sunMat); scene.add(sunMesh);
+            // 1. LUMIÈRE D'AMBIANCE (HEMISPHERE) - BOOSTÉE
+            // J'ai éclairci la couleur du sol (2e param) et monté l'intensité à 0.9
+            const hemiLight = new THREE.HemisphereLight(0x8A2BE2, 0x606080, 0.9); 
+            scene.add(hemiLight);
+
+            // 1b. LUMIÈRE GLOBALE (AMBIENT) - AJOUTÉE
+            // Une lumière blanche douce partout pour éviter que ce soit trop sombre
+            const ambient = new THREE.AmbientLight(0xFFFFFF, 0.4); 
+            scene.add(ambient);
+
+            // 2. LE SOLEIL (Source des ombres)
+            const sunLight = new THREE.DirectionalLight(0xFFD700, 1.5); 
+            
+            // POSITION DU SOLEIL : Z = -100 (Devant l'avion pour ombres de face)
+            sunLight.position.set(-30, 60, -100); 
+            
+            sunLight.castShadow = true; 
+            
+            // CONFIGURATION OMBRES (Qualité et portée)
+            sunLight.shadow.mapSize.width = 2048; 
+            sunLight.shadow.mapSize.height = 2048;
+            const d = 150;
+            sunLight.shadow.camera.left = -d;
+            sunLight.shadow.camera.right = d;
+            sunLight.shadow.camera.top = d;
+            sunLight.shadow.camera.bottom = -d;
+            sunLight.shadow.camera.near = 0.1;
+            sunLight.shadow.camera.far = 500;
+            sunLight.shadow.bias = -0.0005; // Évite les rayures noires
+            
+            scene.add(sunLight);
+            
+            // LE SOLEIL VISUEL (CORRIGÉ POUR ÊTRE EN ARRIÈRE-PLAN)
+            const sunGeo = new THREE.CircleGeometry(80, 32); // Un peu plus gros pour le style
+            const sunMat = new THREE.MeshBasicMaterial({ 
+                color: 0xFFD700, 
+                fog: false, 
+                // C'EST ICI LA MAGIE :
+                depthWrite: false, // Ne pas écrire sa distance dans le "buffer de profondeur"
+                side: THREE.DoubleSide // Juste au cas où
+            }); 
+            sunMesh = new THREE.Mesh(sunGeo, sunMat); 
+            
+            // Force le soleil à être dessiné AVANT tout le reste du décor
+            sunMesh.renderOrder = -999; 
+            
+            scene.add(sunMesh);
             
             createVoxelPlane(); createStarField();
             for(let i=0; i<CONFIG.chunkCount; i++) terrainChunks.push(createChunk(-i * CONFIG.chunkSize));
@@ -725,41 +882,293 @@
             const line = new THREE.LineSegments(edges, lineMat); mesh.add(line); return mesh;
         }
 
-        function createVoxelPlane() {
-            plane = new THREE.Group(); 
-            const P_OPACITY = 0.5; // REDUCED OPACITY
+        // CETTE FONCTION CONSTRUIT L'AVION MAIS NE L'AJOUTE PAS À LA SCÈNE
+        function buildPlaneModel(skinIdx) {
+            const group = new THREE.Group();
+            const skin = SKINS[skinIdx];
+            const cols = skin.colors;
+            const P_OPACITY = 1.0; 
+
+            // --- MODÈLE A : STANDARD ---
+            if (skin.model === 'A') {
+                group.add(createVoxelBox(1.2, 1.2, 1.0, 0xCCCCCC, 0, 0, -3.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.8, 1.8, 1.5, cols.sec, 0, 0, -2.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(2.0, 2.0, 3.0, cols.main, 0, 0, -0.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.6, 1.6, 2.0, cols.sec, 0, 0, 2.0, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.4, 0.6, 1.0, cols.glass, 0, 1.1, -1.0, false, 0.7, false)); 
+                group.add(createVoxelBox(1.6, 0.8, 1.5, cols.glass, 0, 1.2, 0.2, false, 0.7, false));
+                
+                const wingL = new THREE.Group();
+                wingL.add(createVoxelBox(3.5, 0.4, 1.5, cols.main, -2.5, 0, 0, false, P_OPACITY, false)); 
+                wingL.add(createVoxelBox(2.5, 0.3, 1.0, 0xCCCCCC, -5.0, 0, 0.5, false, P_OPACITY, false)); 
+                wingL.add(createVoxelBox(0.2, 0.8, 1.5, cols.sec, -6.0, 0.5, 0.5, false, P_OPACITY, false)); 
+                group.add(wingL);
+                const wingR = new THREE.Group();
+                wingR.add(createVoxelBox(3.5, 0.4, 1.5, cols.main, 2.5, 0, 0, false, P_OPACITY, false)); 
+                wingR.add(createVoxelBox(2.5, 0.3, 1.0, 0xCCCCCC, 5.0, 0, 0.5, false, P_OPACITY, false));
+                wingR.add(createVoxelBox(0.2, 0.8, 1.5, cols.sec, 6.0, 0.5, 0.5, false, P_OPACITY, false)); 
+                group.add(wingR);
+                
+                group.add(createVoxelBox(0.4, 2.0, 1.5, cols.sec, 0, 1.5, 2.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(3.0, 0.3, 1.0, 0x333333, 0, 0.5, 2.8, false, P_OPACITY, false));
+                group.add(createVoxelBox(0.5, 0.5, 1.0, 0x333333, 0.8, -0.8, 1.0, false, P_OPACITY, false));
+                group.add(createVoxelBox(0.5, 0.5, 1.0, 0x333333, -0.8, -0.8, 1.0, false, P_OPACITY, false));
+            }
+
+            // --- MODÈLE B : INTERCEPTEUR ---
+            else if (skin.model === 'B') {
+                group.add(createVoxelBox(0.6, 0.6, 2.0, 0x222222, 0, 0, -4.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.2, 1.0, 2.0, cols.sec, 0, 0, -2.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.6, 1.4, 4.0, cols.main, 0, 0, 0.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.0, 0.5, 2.0, cols.glass, 0, 0.9, -1.0, false, 0.8, false));
+                
+                const wingL = new THREE.Group();
+                wingL.add(createVoxelBox(2.0, 0.2, 1.0, cols.main, -1.8, 0, 1.0, false, P_OPACITY, false));
+                wingL.add(createVoxelBox(2.0, 0.2, 0.8, cols.sec, -3.5, 0, -0.5, false, P_OPACITY, false)); 
+                group.add(wingL);
+                const wingR = new THREE.Group();
+                wingR.add(createVoxelBox(2.0, 0.2, 1.0, cols.main, 1.8, 0, 1.0, false, P_OPACITY, false));
+                wingR.add(createVoxelBox(2.0, 0.2, 0.8, cols.sec, 3.5, 0, -0.5, false, P_OPACITY, false));
+                group.add(wingR);
+
+                group.add(createVoxelBox(0.2, 1.5, 1.5, cols.sec, -0.8, 1.0, 2.0, false, P_OPACITY, false));
+                group.add(createVoxelBox(0.2, 1.5, 1.5, cols.sec, 0.8, 1.0, 2.0, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.0, 1.0, 0.5, cols.glow, 0, 0, 2.5, true, 1.0, false));
+            }
+
+            // --- MODÈLE C : BOMBARDIER ---
+            else if (skin.model === 'C') {
+                group.add(createVoxelBox(2.5, 1.0, 1.0, 0x222222, 0, 0, -3.0, false, P_OPACITY, false));
+                group.add(createVoxelBox(3.0, 1.5, 4.0, cols.main, 0, 0, -0.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(2.0, 0.6, 1.5, cols.glass, 0, 1.0, -1.5, false, 0.7, false));
+                group.add(createVoxelBox(4.0, 0.5, 2.0, cols.main, -3.5, -0.2, 0, false, P_OPACITY, false));
+                group.add(createVoxelBox(4.0, 0.5, 2.0, cols.main, 3.5, -0.2, 0, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.0, 1.0, 2.0, cols.sec, -3.0, 0.5, 0.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(1.0, 1.0, 2.0, cols.sec, 3.0, 0.5, 0.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(0.5, 0.5, 3.0, cols.main, -1.5, 0, 2.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(0.5, 0.5, 3.0, cols.main, 1.5, 0, 2.5, false, P_OPACITY, false));
+                group.add(createVoxelBox(4.0, 0.4, 0.8, cols.sec, 0, 0.5, 4.0, false, P_OPACITY, false));
+            }
+
+            // Hélice commune
+            const prop = new THREE.Group();
+            prop.add(createVoxelBox(0.8, 0.8, 0.5, 0x111111, 0, 0, 0, false, P_OPACITY, false)); 
+            prop.add(createVoxelBox(7.0, 0.4, 0.1, 0x111111, 0, 0, 0, false, P_OPACITY, false)); 
+            prop.add(createVoxelBox(0.4, 7.0, 0.1, 0x111111, 0, 0, 0, false, P_OPACITY, false)); 
             
-            // Disable shadow casting for plane components to fix shadow bug
-            plane.add(createVoxelBox(2, 2, 6, 0xD32F2F, 0, 0, 0, false, P_OPACITY, false)); 
-            const glassGeo = new THREE.BoxGeometry(1.8, 0.8, 1.5); const glassMat = new THREE.MeshPhongMaterial({color: 0x88CCFF, transparent: true, opacity: 0.6, flatShading: true});
-            const glass = new THREE.Mesh(glassGeo, glassMat); glass.position.set(0, 1.2, 0.5); glass.castShadow = false; plane.add(glass);
-            plane.add(createVoxelBox(10, 0.5, 3, 0xFFFFFF, 0, 1.5, 0, false, P_OPACITY, false)); plane.add(createVoxelBox(8, 0.5, 3, 0xFFFFFF, 0, -1, 0, false, P_OPACITY, false));
-            plane.add(createVoxelBox(10.1, 0.1, 0.2, 0x00FFFF, 0, 1.51, 1.5, true, P_OPACITY, false)); plane.add(createVoxelBox(8.1, 0.1, 0.2, 0x00FFFF, 0, -1.01, 1.5, true, P_OPACITY, false));
-            plane.add(createVoxelBox(4, 0.5, 2, 0xFFFFFF, 0, 0.5, 2.5, false, P_OPACITY, false)); plane.add(createVoxelBox(0.5, 2.5, 2.1, 0xD32F2F, 0, 1.1, 2.5, false, P_OPACITY, false)); 
-            plane.add(createVoxelBox(0.1, 2.6, 0.2, 0x00FFFF, 0, 1.11, 3.5, true, P_OPACITY, false));
-            plane.add(createVoxelBox(0.2, 2.5, 0.5, 0x333333, -3, 0, 0, false, P_OPACITY, false)); plane.add(createVoxelBox(0.2, 2.5, 0.5, 0x333333, 3, 0, 0, false, P_OPACITY, false));
-            propeller = createVoxelBox(6, 0.5, 0.5, 0x333333, 0, 0, -3.2, false, P_OPACITY, false); plane.add(propeller);
-            drillMesh = new THREE.Group();
-            drillMesh.add(createVoxelBox(2.0, 3.0, 2.0, 0x555555, 0, 0, 0, false, P_OPACITY, false)); drillMesh.add(createVoxelBox(2.5, 0.8, 2.5, 0xFFFF00, 0, 0.5, 0, true, P_OPACITY, false)); 
-            drillMesh.add(createVoxelBox(1.5, 1.5, 1.5, 0xFFFFFF, 0, 1.8, 0, true, P_OPACITY, false)); drillMesh.rotation.x = Math.PI / 2; drillMesh.position.set(0, 0, -6.0); drillMesh.visible = false;
-            plane.add(drillMesh); scene.add(plane);
+            let propZ = -4.1;
+            if(skin.model === 'B') propZ = -5.0; 
+            if(skin.model === 'C') propZ = -3.6; 
+            prop.position.set(0, 0, propZ);
+            
+            // On stocke la référence à l'hélice dans le groupe pour pouvoir l'animer
+            group.userData.propeller = prop;
+            group.add(prop);
+
+            // Foreuse (Cachée par défaut)
+            const drill = new THREE.Group();
+            drill.add(createVoxelBox(2.2, 2.2, 1.0, 0x555555, 0, 0, 0, false, P_OPACITY, false));
+            drill.add(createVoxelBox(1.8, 1.8, 1.5, 0x888888, 0, 0, -1.2, false, P_OPACITY, false));
+            drill.add(createVoxelBox(1.4, 1.4, 1.5, 0xAAAAAA, 0, 0, -2.7, false, P_OPACITY, false));
+            drill.add(createVoxelBox(0.8, 0.8, 1.5, 0xFFFFFF, 0, 0, -4.2, false, P_OPACITY, false));
+            drill.add(createVoxelBox(2.0, 0.4, 0.4, 0xFFFF00, 0, 0.9, -1.0, false, P_OPACITY, false));
+            drill.add(createVoxelBox(1.5, 0.4, 0.4, 0xFFFF00, 0.7, 0, -2.5, false, P_OPACITY, false));
+            drill.add(createVoxelBox(1.0, 0.3, 0.3, 0xFFFF00, 0, -0.5, -3.8, false, P_OPACITY, false));
+            drill.position.set(0, 0, -3.5);
+            drill.visible = false;
+            
+            group.userData.drill = drill;
+            group.add(drill);
+
+            return group;
+        }
+
+        function createVoxelPlane() {
+            if(plane) scene.remove(plane);
+            // On appelle le constructeur universel avec le skin actuel
+            plane = buildPlaneModel(currentSkinIndex);
+            
+            // On récupère les références utiles pour l'animation du jeu
+            propeller = plane.userData.propeller;
+            drillMesh = plane.userData.drill;
+            
+            scene.add(plane);
+        }
+
+        // --- NOUVEAU : GÉNÉRATEUR D'ARBRES DÉTAILLÉS ---
+        function createVoxelTree(leafColor) {
+            const group = new THREE.Group();
+            const trunkColor = 0x443322;
+            
+            // On choisit une variante au hasard
+            const variant = Math.floor(Math.random() * 3);
+
+            if (variant === 0) { // TYPE 1 : LE PIN (Conique)
+                // Tronc
+                group.add(createVoxelBox(1.2, 2.0, 1.2, trunkColor, 0, 1, 0));
+                // Feuillage en étages
+                group.add(createVoxelBox(4.0, 1.5, 4.0, leafColor, 0, 2.0, 0, false, 1.0, true));
+                group.add(createVoxelBox(3.0, 1.5, 3.0, leafColor, 0, 3.2, 0, false, 1.0, true));
+                group.add(createVoxelBox(1.5, 1.5, 1.5, leafColor, 0, 4.4, 0, false, 1.0, true));
+                group.add(createVoxelBox(0.5, 1.0, 0.5, leafColor, 0, 5.5, 0, false, 1.0, true));
+            } 
+            else if (variant === 1) { // TYPE 2 : LE CHÊNE (Arrondi)
+                // Tronc plus large
+                group.add(createVoxelBox(1.5, 2.5, 1.5, trunkColor, 0, 1.2, 0));
+                // Feuillage dense et large
+                group.add(createVoxelBox(5.0, 2.0, 5.0, leafColor, 0, 3.0, 0, false, 1.0, true));
+                group.add(createVoxelBox(5.5, 1.5, 5.5, leafColor, 0, 2.5, 0, false, 1.0, true)); // Base large
+                group.add(createVoxelBox(3.5, 1.5, 3.5, leafColor, 0, 4.2, 0, false, 1.0, true)); // Haut
+            }
+            else { // TYPE 3 : L'ALIEN / SAULE (Abstrait)
+                // Tronc fin et haut
+                group.add(createVoxelBox(0.8, 3.0, 0.8, trunkColor, 0, 1.5, 0));
+                // Haut plat
+                group.add(createVoxelBox(4.0, 0.8, 4.0, leafColor, 0, 3.5, 0, false, 1.0, true));
+                // Lianes qui tombent (voxels flottants)
+                group.add(createVoxelBox(0.5, 1.5, 0.5, leafColor, -1.5, 2.5, -1.5, false, 1.0, true));
+                group.add(createVoxelBox(0.5, 2.0, 0.5, leafColor, 1.5, 2.2, 1.5, false, 1.0, true));
+                group.add(createVoxelBox(0.5, 1.2, 0.5, leafColor, -1.5, 2.8, 1.5, false, 1.0, true));
+                group.add(createVoxelBox(0.5, 1.8, 0.5, leafColor, 1.5, 2.4, -1.5, false, 1.0, true));
+            }
+            return group;
+        }
+
+        // --- NOUVEAU : GÉNÉRATEUR DE ROCHERS DÉTAILLÉS ---
+        function createVoxelRock(rockColor) {
+            const group = new THREE.Group();
+            // Base large
+            group.add(createVoxelBox(3.0, 1.5, 3.0, rockColor, 0, 0.7, 0));
+            // Milieu
+            group.add(createVoxelBox(2.2, 1.5, 2.2, rockColor, 0.2, 1.8, 0.1));
+            // Pointe décalée
+            group.add(createVoxelBox(1.2, 1.2, 1.2, rockColor, -0.3, 2.8, -0.2));
+            
+            // Petit caillou à côté
+            group.add(createVoxelBox(1.0, 0.8, 1.0, rockColor, 2.0, 0.4, 2.0));
+            
+            return group;
+        }
+
+// --- NOUVEAU : GÉNÉRATEUR DE LACS ---
+        function createVoxelLake(biomeFogColor) {
+            const group = new THREE.Group();
+            
+            // Couleur de l'eau : On mixe du bleu avec la couleur du brouillard du biome pour l'intégration
+            // Si le biome est "Toxic" (vert), l'eau tirera un peu vers le vert, etc.
+            const waterBase = 0x4488FF;
+            // On fait une simulation de mélange simple ou on garde un bleu joli avec transparence
+            
+            // Partie principale de l'eau (Transparente)
+            group.add(createVoxelBox(6.0, 0.4, 6.0, waterBase, 0, 0.1, 0, false, 0.7, false));
+            
+            // Extensions pour casser la forme carrée
+            group.add(createVoxelBox(4.0, 0.4, 3.0, waterBase, 3.5, 0.1, 1.0, false, 0.7, false));
+            group.add(createVoxelBox(3.0, 0.4, 4.0, waterBase, -3.0, 0.1, -2.0, false, 0.7, false));
+            
+            // Bordures / Boue (couleur sombre)
+            const mudColor = 0x3E2723;
+            group.add(createVoxelBox(1.0, 0.3, 1.0, mudColor, 4.0, 0.1, 3.0, false, 1.0, false));
+            group.add(createVoxelBox(1.2, 0.3, 1.2, mudColor, -4.0, 0.1, 1.0, false, 1.0, false));
+
+            // Roseaux (Tiges vertes avec bout marron)
+            const reedGreen = 0x556B2F;
+            const reedBrown = 0x8B4513;
+            
+            // Quelques roseaux aléatoires
+            const positions = [[2.5, 2.5], [2.8, 2.2], [-2.5, -2.5]];
+            positions.forEach(pos => {
+                group.add(createVoxelBox(0.1, 1.2, 0.1, reedGreen, pos[0], 0.6, pos[1], false, 1.0, false));
+                group.add(createVoxelBox(0.15, 0.4, 0.15, reedBrown, pos[0], 1.2, pos[1], false, 1.0, false));
+            });
+
+            return group;
         }
 
         function createChunk(zPos) {
             const geo = new THREE.PlaneGeometry(200, CONFIG.chunkSize, 50, 25); geo.rotateX(-Math.PI/2);
-            const pos = geo.attributes.position; const colors = [];
+            const pos = geo.attributes.position; 
+            const colors = [];
             const biomeColors = getCurrentBiomeColors(zPos);
+            
+            const chunkGroup = new THREE.Group();
+            
             for(let i=0; i<pos.count; i++) {
-                let x = pos.getX(i); let zGlobal = zPos + pos.getZ(i); let rawH = getTerrainHeight(x, zGlobal);
+                let x = pos.getX(i); 
+                let zGlobal = zPos + pos.getZ(i); 
+                let rawH = getTerrainHeight(x, zGlobal);
+                
                 pos.setY(i, Math.floor(rawH / 2) * 2);
-                let finalColor; if (rawH > -8) finalColor = biomeColors.var2; else if (rawH > -4) finalColor = biomeColors.var1; else finalColor = biomeColors.base;
-                let c = new THREE.Color(finalColor); colors.push(c.r, c.g, c.b);
+                
+                let finalColor; 
+                if (rawH > -8) finalColor = biomeColors.var2; 
+                else if (rawH > -4) finalColor = biomeColors.var1; 
+                else finalColor = biomeColors.base;
+                
+                let c = new THREE.Color(finalColor); 
+                colors.push(c.r, c.g, c.b);
+
+                // --- PLACEMENT DES DÉCORS ---
+                // On garde la probabilité globale à 1% (0.99) pour ne pas surcharger
+                if (Math.random() > 0.99) {
+                    
+                    // Uniquement sur la zone plate
+                    if (Math.abs(x) < 30) {
+                        
+                        // NOUVELLE LOGIQUE DE RÉPARTITION
+                        // 5% de chance d'avoir un Lac
+                        // 95% de chance d'avoir un Arbre ou un Rocher
+                        
+                        const typeRnd = Math.random();
+                        let decor;
+
+                        if (typeRnd > 0.95) { 
+                            // --- C'EST UN LAC ---
+                            decor = createVoxelLake(biomeColors.fog);
+                            decor.scale.set(1.5, 1.0, 1.5); // On l'aplatit un peu et on l'élargit
+                            // On le descend un tout petit peu pour qu'il s'incruste dans le sol
+                            decor.position.set(x, (Math.floor(rawH / 2) * 2) - 0.2, pos.getZ(i)); 
+                        } 
+                        else {
+                            // --- C'EST UN ARBRE OU UN ROCHER ---
+                            const isTree = Math.random() > 0.5;
+                            if(isTree) {
+                                const leafCol = (Math.random() > 0.5) ? biomeColors.var1 : biomeColors.fog; 
+                                decor = createVoxelTree(leafCol);
+                                const s = 1.0 + Math.random() * 0.8;
+                                decor.scale.set(s, s, s);
+                            } else {
+                                const rockCol = (Math.random() > 0.5) ? biomeColors.base : 0x333333;
+                                decor = createVoxelRock(rockCol);
+                                const s = 0.8 + Math.random() * 0.6;
+                                decor.scale.set(s, s, s);
+                            }
+                            // Position normale
+                            decor.position.set(x, Math.floor(rawH / 2) * 2, pos.getZ(i)); 
+                        }
+
+                        decor.rotation.y = Math.random() * Math.PI * 2;
+                        chunkGroup.add(decor);
+                    }
+                }
             }
-            geo.computeVertexNormals(); geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            
+            geo.computeVertexNormals(); 
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            
             const mat = new THREE.MeshPhongMaterial({vertexColors: true, flatShading:true, shininess:0});
-            const m = new THREE.Mesh(geo, mat); m.position.z = zPos; m.receiveShadow = true; 
-            const edges = new THREE.EdgesGeometry(geo, 15); const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
-            m.add(line); scene.add(m); return m;
+            const groundMesh = new THREE.Mesh(geo, mat); 
+            groundMesh.receiveShadow = true; 
+            
+            const edges = new THREE.EdgesGeometry(geo, 15); 
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent:true, opacity:0.3 }));
+            
+            groundMesh.add(line);
+            chunkGroup.add(groundMesh);
+            
+            chunkGroup.position.z = zPos;
+            scene.add(chunkGroup); 
+            return chunkGroup;
         }
 
         function addGlow(group, colorHex) {
@@ -768,43 +1177,114 @@
             const aura = new THREE.Mesh(geo, mat); group.add(aura);
         }
 
-        function createVoxelCloud() {
-            const group = new THREE.Group(); const col = CONFIG.colors.cloud; const width = 4 + Math.floor(Math.random() * 3); const depth = 3 + Math.floor(Math.random() * 2);
-            group.add(createVoxelBox(width, 1, depth, col, 0, 0, 0)); const midW = width - 1 - Math.random(); const midD = depth - 0.5;
-            group.add(createVoxelBox(midW, 1, midD, col, 0, 1, 0));
-            if (Math.random() > 0.3) { const topW = midW - 1.5; const topD = midD - 1; if(topW > 0.5) group.add(createVoxelBox(topW, 1, topD, col, 0, 2, 0)); }
-            return group;
-        }
-
-        function createAlienLaserUnit() {
-            const group = new THREE.Group(); group.add(createVoxelBox(6, 2, 6, CONFIG.colors.ufoMain, 0, 0, 0)); group.add(createVoxelBox(4, 1, 4, CONFIG.colors.ufoLight, 0, 1.5, 0, true));
-            const beamGeo = new THREE.BoxGeometry(15, 200, 15); const beamMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.alienLaser, transparent: true, opacity: 0.6 });
-            const beam = new THREE.Mesh(beamGeo, beamMat); beam.position.set(0, -100, 0); beam.userData = { isBeam: true }; group.add(beam); return group;
-        }
-
-        function createBridge() {
+       function createVoxelCloud() {
             const group = new THREE.Group(); 
-            for(let x=-30; x<=30; x+=2) { 
-                let y = (x*x) / 150; 
-                group.add(createVoxelBox(2.2, 0.5, 0.5, CONFIG.colors.bridgeRope, x, y + 2, -2)); 
-                group.add(createVoxelBox(2.2, 0.5, 0.5, CONFIG.colors.bridgeRope, x, y + 2, 2)); 
-                if(x % 4 === 0) group.add(createVoxelBox(1, 0.5, 5, CONFIG.colors.bridge, x, y + 1.5, 0)); 
-            }
+            const col = CONFIG.colors.cloud; 
+            // Base centrale
+            group.add(createVoxelBox(4, 1.5, 3, col, 0, 0, 0, false, 0.8));
+            // Blocs adjacents pour donner du volume
+            group.add(createVoxelBox(2.5, 1.5, 2.5, col, -1.5, 0.5, 0.5, false, 0.8));
+            group.add(createVoxelBox(2.5, 1.5, 2.5, col, 1.5, 0.8, -0.5, false, 0.8));
+            // Un petit bloc au dessus
+            group.add(createVoxelBox(2, 1, 2, col, 0, 1.2, 0, false, 0.8));
+            
             return group;
         }
 
-        function spawnObject() {
+     function createAlienLaserUnit() {
+            const group = new THREE.Group();
+            
+            // Anneau extérieur (Gris foncé)
+            group.add(createVoxelBox(10, 1, 10, CONFIG.colors.ufoMain, 0, 0, 0));
+            // Anneau intérieur (Plus clair)
+            group.add(createVoxelBox(7, 1.5, 7, 0x555555, 0, 0.5, 0));
+            // Dôme (Vert fluo transparent)
+            const dome = createVoxelBox(4, 2, 4, CONFIG.colors.ufoLight, 0, 1.5, 0, true);
+            dome.material.opacity = 0.8;
+            group.add(dome);
+            
+            // Pieds / Canons laser dessous
+            group.add(createVoxelBox(1, 2, 1, 0x880000, 2, -1, 2));
+            group.add(createVoxelBox(1, 2, 1, 0x880000, -2, -1, -2));
+            group.add(createVoxelBox(1, 2, 1, 0x880000, 2, -1, -2));
+            group.add(createVoxelBox(1, 2, 1, 0x880000, -2, -1, 2));
+
+            // Le Rayon Laser
+            const beamGeo = new THREE.BoxGeometry(6, 200, 6); // Rayon un peu plus fin mais plus intense
+            const beamMat = new THREE.MeshBasicMaterial({ color: CONFIG.colors.alienLaser, transparent: true, opacity: 0.5 });
+            const beam = new THREE.Mesh(beamGeo, beamMat);
+            beam.position.set(0, -100, 0);
+            beam.userData = { isBeam: true };
+            
+            // Cœur du rayon (plus blanc pour effet d'énergie)
+            const coreGeo = new THREE.BoxGeometry(2, 200, 2);
+            const coreMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.8 });
+            const coreBeam = new THREE.Mesh(coreGeo, coreMat);
+            beam.add(coreBeam);
+            
+            group.add(beam);
+            return group;
+        }
+
+       function createBridge() {
+            const group = new THREE.Group();
+            
+            // On parcourt la largeur du canyon
+            for(let x=-32; x<=32; x+=2.0) { 
+                // Forme en "U" (Chaînette) : le pont pendouille au milieu
+                let y = (x*x) / 180; 
+                
+                // 1. Les Planches (Le sol) - Un peu irrégulières pour le style
+                const plankW = 1.8 + Math.random() * 0.4;
+                group.add(createVoxelBox(1.8, 0.3, plankW, CONFIG.colors.bridge, x, y, 0));
+                
+                // 2. Les Cordes principales (Main courante)
+                // On allonge les blocs sur l'axe X (2.2) pour qu'ils se touchent et forment une ligne continue
+                const ropeY = y + 1.2;
+                group.add(createVoxelBox(2.2, 0.3, 0.3, CONFIG.colors.bridgeRope, x, ropeY, -1.2)); // Corde Gauche
+                group.add(createVoxelBox(2.2, 0.3, 0.3, CONFIG.colors.bridgeRope, x, ropeY, 1.2));  // Corde Droite
+                
+                // 3. Les attaches verticales (Fil qui tient la planche à la corde)
+                // On en met une toutes les 2 planches environ pour ne pas surcharger
+                if (Math.abs(x) % 4 < 1) {
+                    group.add(createVoxelBox(0.1, 1.2, 0.1, 0x553311, x, y + 0.6, -1.2));
+                    group.add(createVoxelBox(0.1, 1.2, 0.1, 0x553311, x, y + 0.6, 1.2));
+                }
+            }
+            
+            // Gros blocs d'ancrage aux extrémités (pour que le pont ne flotte pas dans le vide absolu)
+            const anchorY = (32*32)/180;
+            group.add(createVoxelBox(4, 4, 4, 0x332211, -34, anchorY, 0));
+            group.add(createVoxelBox(4, 4, 4, 0x332211, 34, anchorY, 0));
+
+            return group;
+        }
+
+function spawnObject() {
             if (isIntro) return; 
             const thresholds = getSpawnThresholds(distance);
             const r = Math.random(); let type = 'cloud';
             
+            // --- SPAWNS RARES (OVNI & PONT) ---
             if (distance > 1500 && Math.random() < 0.15) {
-                const m = createAlienLaserUnit(); const spawnZ = plane.position.z - 400; let spawnX = (Math.random()-0.5) * 66; m.position.set(spawnX, 50, spawnZ); m.userData = { type: 'alien_laser', baseScale: 1.0 }; scene.add(m); objects.push(m); return; 
+                const m = createAlienLaserUnit(); 
+                const spawnZ = plane.position.z - 400; 
+                let spawnX = (Math.random()-0.5) * 66; 
+                m.position.set(spawnX, 50, spawnZ); 
+                m.userData = { type: 'alien_laser', baseScale: 1.0 }; 
+                scene.add(m); objects.push(m); 
+                return; 
             }
             if (distance > 1500 && Math.random() < 0.10) {
-                const m = createBridge(); const spawnZ = plane.position.z - 400; m.position.set(0, 5, spawnZ); m.userData = { type: 'bridge', baseScale: 1.0 }; scene.add(m); objects.push(m); return;
+                const m = createBridge(); 
+                const spawnZ = plane.position.z - 400; 
+                m.position.set(0, 5, spawnZ); 
+                m.userData = { type: 'bridge', baseScale: 1.0 }; 
+                scene.add(m); objects.push(m); 
+                return;
             }
 
+            // --- CHOIX DU TYPE D'OBJET ---
             if(r < thresholds.bird) type = 'bird'; 
             else if(r < thresholds.balloon) type = 'balloon'; 
             else if(r < thresholds.wrench) type = 'wrench'; 
@@ -814,32 +1294,125 @@
             else if(r < thresholds.drill) type = 'drill'; 
             else type = 'cloud'; 
 
-            let m; let baseScale = 1.3; 
-            if(type === 'cloud') { m = createVoxelCloud(); baseScale = 1.0 + Math.random() * 0.5; m.userData = {type:'cloud', baseScale: baseScale, id: Math.random() * 100}; }
+            let m; 
+            let baseScale = 1.3; 
+
+            // --- CRÉATION DE L'OBJET ---
+            if(type === 'cloud') { 
+                m = createVoxelCloud(); 
+                baseScale = 1.0 + Math.random() * 0.5; 
+                m.userData = {type:'cloud', baseScale: baseScale, id: Math.random() * 100}; 
+            }
             else {
-                m = new THREE.Group();
+                m = new THREE.Group(); // IMPORTANT : Initialisation du groupe
+                
+                // --- OISEAU (V2 - Détaillé) ---
                 if(type==='bird') { 
-                    const body = createVoxelBox(1.5, 1.5, 2.0, CONFIG.colors.birdBody, 0, 0, 0); const beak = createVoxelBox(0.5, 0.5, 0.8, 0xD4AF37, 0, 0, -1.2); 
-                    const g1=new THREE.Group(); g1.add(createVoxelBox(2.5,0.2,1.5,CONFIG.colors.birdWing,-1.2,0,0)); g1.position.set(-0.5,0.2,0);
-                    const g2=new THREE.Group(); g2.add(createVoxelBox(2.5,0.2,1.5,CONFIG.colors.birdWing,1.2,0,0)); g2.position.set(0.5,0.2,0);
-                    m.add(body, beak, g1, g2); m.userData = {wings:[g1, g2], dead: false}; baseScale = 1.0;
+                    const body = new THREE.Group();
+                    body.add(createVoxelBox(1.8, 1.2, 2.5, CONFIG.colors.birdBody, 0, 0, 0)); 
+                    body.add(createVoxelBox(1.4, 0.8, 2.0, 0x333333, 0, 0.8, -0.2)); 
                     
-                    // Moving Bird Logic (10%)
-                    if (Math.random() < 0.1) {
-                        m.userData.isMoving = true;
-                        m.userData.phase = Math.random() * Math.PI;
-                    }
+                    const head = new THREE.Group();
+                    head.add(createVoxelBox(1.0, 1.0, 1.2, CONFIG.colors.birdBody, 0, 0, 0)); 
+                    head.add(createVoxelBox(0.8, 0.4, 1.0, 0xFFD700, 0, -0.2, -1.0));
+                    head.add(createVoxelBox(0.3, 0.3, 0.3, 0x00FFFF, 0.4, 0.3, -0.5, true)); 
+                    head.add(createVoxelBox(0.3, 0.3, 0.3, 0x00FFFF, -0.4, 0.3, -0.5, true)); 
+                    head.position.set(0, 0.4, -1.8);
+                    body.add(head);
+
+                    body.add(createVoxelBox(1.2, 0.2, 1.5, 0x333333, 0, 0.5, 1.8));
+
+                    const g1=new THREE.Group(); 
+                    g1.add(createVoxelBox(3.0, 0.3, 1.8, CONFIG.colors.birdWing, -1.5, 0, 0));
+                    g1.add(createVoxelBox(2.5, 0.2, 1.2, 0x333333, -2.5, 0.2, 0.3));
+                    g1.add(createVoxelBox(1.5, 0.2, 0.8, 0xFFD700, -3.5, 0.1, 0.5));
+                    g1.position.set(-0.8, 0.4, 0);
+
+                    const g2=new THREE.Group(); 
+                    g2.add(createVoxelBox(3.0, 0.3, 1.8, CONFIG.colors.birdWing, 1.5, 0, 0));
+                    g2.add(createVoxelBox(2.5, 0.2, 1.2, 0x333333, 2.5, 0.2, 0.3));
+                    g2.add(createVoxelBox(1.5, 0.2, 0.8, 0xFFD700, 3.5, 0.1, 0.5));
+                    g2.position.set(0.8, 0.4, 0);
+
+                    m.add(body, g1, g2); 
+                    m.userData = {wings:[g1, g2], dead: false}; 
+                    baseScale = 1.3; 
+                    
+                    if (Math.random() < 0.1) { m.userData.isMoving = true; m.userData.phase = Math.random() * Math.PI; }
                 } 
-                else if(type==='fuel') { m.add(createVoxelBox(1.5, 2, 1.5, CONFIG.colors.fuel, 0, 0, 0)); m.add(createVoxelBox(0.2, 0.5, 1, 0x333333, 0, 1.2, 0)); addGlow(m, 0xFF0000); }
-                else if(type==='missile') { const shGroup = new THREE.Group(); shGroup.add(createVoxelBox(2.5, 3.5, 0.2, 0x00FFFF, 0, 0, 0, true)); shGroup.add(createVoxelBox(2.8, 3.8, 0.1, 0x555555, 0, 0, 0)); shGroup.add(createVoxelBox(1.5, 0.2, 0.3, 0xFFFFFF, 0, 0, 0.2, true)); m.add(shGroup); addGlow(m, 0x00FFFF); }
-                else if(type==='rocket') { m.add(createVoxelBox(1, 1, 3, CONFIG.colors.rocket, 0, 0, 0, true)); m.add(createVoxelBox(1.2, 1.2, 0.5, 0xFFFFFF, 0, 0, -1.5)); addGlow(m, 0xFF00FF); }
-                else if(type==='wrench') { m.add(createVoxelBox(0.8, 3.5, 0.5, 0xFF0000, 0, 0, 0)); m.add(createVoxelBox(2.0, 1.2, 0.5, 0xC0C0C0, 0, 1.5, 0, true)); addGlow(m, 0xCCCCCC); }
-                else if(type==='balloon') { m.add(createVoxelBox(4, 1, 4, CONFIG.colors.balloonMain, 0, 4, 0)); m.add(createVoxelBox(6, 4, 6, CONFIG.colors.balloonSec, 0, 1.5, 0)); m.add(createVoxelBox(2, 1, 2, CONFIG.colors.balloonMain, 0, -1, 0)); m.add(createVoxelBox(1.5, 1.5, 1.5, 0x553311, 0, -4, 0)); m.add(createVoxelBox(0.1, 3, 0.1, 0x000000, -0.6, -2.5, 0)); m.add(createVoxelBox(0.1, 3, 0.1, 0x000000, 0.6, -2.5, 0)); baseScale = 1.0; }
-                else if(type==='drill') { m.add(createVoxelBox(1, 2, 1, 0x555555, 0, 0, 0)); m.add(createVoxelBox(1.2, 0.5, 1.2, 0xFFA500, 0, 0.5, 0)); m.add(createVoxelBox(0.8, 0.8, 0.8, 0xFFA500, 0, 1.2, 0)); m.add(createVoxelBox(0.4, 0.8, 0.4, 0xFFFFFF, 0, 1.8, 0, true)); addGlow(m, 0xFFA500); }
+                
+                // --- BALLON (V2 - Mine) ---
+                else if(type==='balloon') { 
+                    const bMain = CONFIG.colors.balloonMain;
+                    const bSec = CONFIG.colors.balloonSec;
+                    m.add(createVoxelBox(5.0, 3.0, 5.0, bMain, 0, 3, 0)); 
+                    m.add(createVoxelBox(4.0, 4.0, 4.0, bSec, 0, 3, 0)); 
+                    m.add(createVoxelBox(3.0, 5.0, 3.0, bMain, 0, 3, 0)); 
+                    m.add(createVoxelBox(2.0, 1.5, 2.0, 0x333333, 0, -1.5, 0)); 
+                    m.add(createVoxelBox(1.2, 1.2, 1.2, 0x111111, 0, -2.2, 0)); 
+                    m.add(createVoxelBox(0.4, 0.4, 0.4, 0xFF0000, 0, -2.5, 0.8, true)); 
+                    
+                    const ropeCol = 0xDDDDDD;
+                    m.add(createVoxelBox(0.1, 3.5, 0.1, ropeCol, -1.5, 0.5, -1.5));
+                    m.add(createVoxelBox(0.1, 3.5, 0.1, ropeCol, 1.5, 0.5, 1.5));
+                    m.add(createVoxelBox(0.1, 3.5, 0.1, ropeCol, -1.5, 0.5, 1.5));
+                    m.add(createVoxelBox(0.1, 3.5, 0.1, ropeCol, 1.5, 0.5, -1.5));
+                    baseScale = 1.0; 
+                }
+
+                // --- AUTRES OBJETS (FUEL, ROCKET, ETC.) ---
+                else if(type==='fuel') { 
+                    m.add(createVoxelBox(2.0, 2.5, 1.0, CONFIG.colors.fuel, 0, 0, 0)); 
+                    m.add(createVoxelBox(0.5, 0.5, 0.5, 0x333333, 0, 1.5, -0.3));
+                    m.add(createVoxelBox(1.5, 0.4, 0.4, 0xAA0000, 0, 1.4, 0)); 
+                    m.add(createVoxelBox(0.4, 1.4, 0.4, 0xAA0000, -0.6, 0.8, 0));
+                    m.add(createVoxelBox(1.2, 0.4, 1.2, 0xFFFFFF, 0, 0, 0, true));
+                    m.add(createVoxelBox(0.4, 1.2, 1.2, 0xFFFFFF, 0, 0, 0, true));
+                    addGlow(m, 0xFF2200); 
+                }
+                else if(type==='missile') { 
+                    const shGroup = new THREE.Group();
+                    shGroup.add(createVoxelBox(1.5, 1.5, 0.5, 0x333399, 0, 0, 0.2));
+                    shGroup.add(createVoxelBox(0.8, 0.8, 0.8, 0xFFFFFF, 0, 0, 0.5, true));
+                    shGroup.add(createVoxelBox(3.0, 3.5, 0.2, 0x0000FF, 0, 0, 0, false, 0.6));
+                    shGroup.add(createVoxelBox(2.5, 3.0, 0.2, 0x0088FF, 0, 0, -0.2, false, 0.7));
+                    shGroup.add(createVoxelBox(2.0, 2.5, 0.2, 0x00FFFF, 0, 0, -0.4, true, 0.8));
+                    m.add(shGroup); 
+                    addGlow(m, 0x00FFFF); 
+                }
+                else if(type==='rocket') { 
+                    m.add(createVoxelBox(1.0, 1.0, 3.5, 0xFF00FF, 0, 0, 0)); 
+                    m.add(createVoxelBox(0.8, 0.8, 1.5, 0xFFFFFF, 0, 0.4, -0.5));
+                    m.add(createVoxelBox(0.7, 0.7, 1.0, 0xFFFFFF, 0, 0, -2.0));
+                    m.add(createVoxelBox(1.4, 1.4, 0.8, 0x550055, 0, 0, 1.8));
+                    m.add(createVoxelBox(1.0, 1.0, 0.5, 0xFFFF00, 0, 0, 2.3, true));
+                    m.add(createVoxelBox(3.0, 0.2, 1.2, 0x00FFFF, 0, 0, 1.2));
+                    m.add(createVoxelBox(0.2, 3.0, 1.2, 0x00FFFF, 0, 0, 1.2));
+                    addGlow(m, 0xFF00FF); 
+                }
+                else if(type==='wrench') { 
+                    m.add(createVoxelBox(0.8, 2.5, 0.5, 0x444444, 0, -1.0, 0));
+                    m.add(createVoxelBox(1.0, 1.5, 0.6, 0x222222, 0, -1.5, 0));
+                    m.add(createVoxelBox(2.2, 1.2, 0.7, 0xAAAAAA, 0, 1.2, 0)); 
+                    m.add(createVoxelBox(0.6, 1.5, 0.7, 0xCCCCCC, -1.0, 2.0, 0));
+                    m.add(createVoxelBox(0.6, 1.5, 0.7, 0xCCCCCC, 1.0, 2.0, 0));
+                    m.add(createVoxelBox(0.4, 0.8, 0.8, 0x00FF00, 0, 0.5, 0, true));
+                    m.rotation.z = Math.PI / 4; 
+                    addGlow(m, 0x00FF00); 
+                }
+                else if(type==='drill') { 
+                    m.add(createVoxelBox(1.8, 2.0, 1.8, 0x333333, 0, -0.5, 0)); 
+                    m.add(createVoxelBox(1.6, 0.8, 1.6, 0x666666, 0, 0.8, 0));
+                    m.add(createVoxelBox(1.2, 0.8, 1.2, 0x996633, 0, 1.5, 0));
+                    m.add(createVoxelBox(0.8, 1.0, 0.8, 0xFF8C00, 0, 2.2, 0, true));
+                    m.add(createVoxelBox(0.4, 0.6, 0.4, 0xFFFF00, 0, 2.9, 0, true));
+                    addGlow(m, 0xFF8C00); 
+                }
                 
                 if(!m.userData) m.userData = {}; m.userData.type = type; if(!m.userData.baseScale) m.userData.baseScale = baseScale;
             }
             
+            // --- POSITIONNEMENT ---
             const spawnZ = plane.position.z - 400; let spawnX = (Math.random()-0.5) * 60; 
             const h1 = getTerrainHeight(spawnX, spawnZ); const h2 = getTerrainHeight(spawnX - 2, spawnZ); const h3 = getTerrainHeight(spawnX + 2, spawnZ);
             const safeH = Math.max(h1, h2, h3); let spawnY = Math.max(safeH + 4, (Math.random() * 10) - 2);
@@ -952,9 +1525,25 @@
             
             frameCount++; distance += gameSpeed * 0.1 * fpsFactor;
             if(wallHitTimer > 0) wallHitTimer -= fpsFactor;
-            sunMesh.position.z = plane.position.z - 400; sunMesh.position.x = 0; sunMesh.position.y = 30;
+            // Mise à jour du Soleil Visuel (Au loin)
+            sunMesh.position.z = plane.position.z - 450; 
+            sunMesh.position.x = plane.position.x * 0.3; 
+            sunMesh.position.y = 60;
 
-            starField.position.x = plane.position.x; starField.position.z = plane.position.z; 
+            // Mise à jour de la Lumière (Reste devant l'avion)
+            const sunLightObj = scene.children.find(c => c.isDirectionalLight);
+            if(sunLightObj) {
+                // On place la lumière 100 unités DEVANT l'avion (z plus petit car on va vers le négatif)
+                sunLightObj.position.z = plane.position.z - 100; 
+                sunLightObj.position.x = plane.position.x - 30; 
+                sunLightObj.position.y = 60; 
+                
+                // La lumière pointe vers l'avion
+                sunLightObj.target.position.set(plane.position.x, plane.position.y, plane.position.z);
+                sunLightObj.target.updateMatrixWorld();
+            }
+
+            starField.position.x = plane.position.x; starField.position.z = plane.position.z;
             const positions = starField.geometry.attributes.position.array;
             for(let i=2; i<positions.length; i+=3) { positions[i] += gameSpeed * 0.05 * fpsFactor; if(positions[i] > 200) positions[i] -= 800; }
             starField.geometry.attributes.position.needsUpdate = true;
@@ -990,7 +1579,7 @@
             }
 
             if (birdShieldTimer > 0) birdShieldTimer -= fpsFactor;
-            if (drillTimer > 0) { drillTimer -= fpsFactor; drillMesh.rotation.y += 0.3 * fpsFactor; if(drillTimer <= 0) { drillMesh.visible = false; propeller.visible = true; } }
+            if (drillTimer > 0) { drillTimer -= fpsFactor; drillMesh.rotation.z += 0.6 * fpsFactor; if(drillTimer <= 0) { drillMesh.visible = false; propeller.visible = true; } }
 
             if (invincibleTimer > 0) invincibleTimer -= fpsFactor;
             
@@ -1102,6 +1691,95 @@
             for(let i=particles.length-1; i>=0; i--){ particles[i].position.add(particles[i].userData.vel); particles[i].rotation.x += 0.1*fpsFactor; particles[i].scale.multiplyScalar(0.9); if(particles[i].scale.x<0.05){scene.remove(particles[i]);particles.splice(i,1);} }
             renderer.render(scene, camera);
         }
+
+        // --- LOGIQUE DU GARAGE 3D ---
+        let garageScene, garageCamera, garageRenderer, garagePlane;
+        let isGarageOpen = false;
+        let garageRotationSpeed = 0.01;
+        let isDraggingPlane = false;
+        let lastMouseX = 0;
+
+        function initGarage3D() {
+            if(garageRenderer) return; // Déjà initialisé
+
+            const container = document.getElementById('garage-3d-container');
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+
+            // 1. Scène
+            garageScene = new THREE.Scene();
+            
+            // 2. Caméra
+            garageCamera = new THREE.PerspectiveCamera(50, w/h, 0.1, 100);
+            garageCamera.position.set(0, 4, 14);
+            garageCamera.lookAt(0, 0, 0);
+
+            // 3. Renderer (Avec transparence pour le fond CSS)
+            garageRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            garageRenderer.setSize(w, h);
+            container.appendChild(garageRenderer.domElement);
+
+            // 4. Lumières (Simples pour bien voir le modèle)
+            const ambient = new THREE.AmbientLight(0xFFFFFF, 0.6);
+            garageScene.add(ambient);
+            const dirLight = new THREE.DirectionalLight(0xFFFFFF, 1.0);
+            dirLight.position.set(5, 10, 7);
+            garageScene.add(dirLight);
+            const backLight = new THREE.DirectionalLight(0x4444FF, 0.5); // Petite lumière bleue arrière pour le style
+            backLight.position.set(-5, 0, -10);
+            garageScene.add(backLight);
+
+            // 5. Gestion de la rotation à la souris/tactile
+            container.addEventListener('mousedown', e => { isDraggingPlane = true; lastMouseX = e.clientX; garageRotationSpeed = 0; });
+            window.addEventListener('mousemove', e => {
+                if(isDraggingPlane && garagePlane) {
+                    const delta = e.clientX - lastMouseX;
+                    garagePlane.rotation.y += delta * 0.01;
+                    lastMouseX = e.clientX;
+                }
+            });
+            window.addEventListener('mouseup', () => { isDraggingPlane = false; garageRotationSpeed = 0.005; }); // Reprend la rotation lente
+
+            // Tactile
+            container.addEventListener('touchstart', e => { isDraggingPlane = true; lastMouseX = e.touches[0].clientX; garageRotationSpeed = 0; }, {passive:false});
+            container.addEventListener('touchmove', e => {
+                if(isDraggingPlane && garagePlane) {
+                    e.preventDefault();
+                    const delta = e.touches[0].clientX - lastMouseX;
+                    garagePlane.rotation.y += delta * 0.01;
+                    lastMouseX = e.touches[0].clientX;
+                }
+            }, {passive:false});
+            container.addEventListener('touchend', () => { isDraggingPlane = false; garageRotationSpeed = 0.005; });
+        }
+
+        function updateGaragePlane() {
+            if(!garageScene) return;
+            if(garagePlane) garageScene.remove(garagePlane);
+            
+            // On construit une copie de l'avion spécifiquement pour le garage
+            garagePlane = buildPlaneModel(previewSkinIndex);
+            garagePlane.rotation.y = -Math.PI / 4; // Angle de présentation sympa
+            garagePlane.rotation.x = 0.2; // Un peu cabré
+            garageScene.add(garagePlane);
+        }
+
+        function animateGarage() {
+            if(!isGarageOpen) return;
+            requestAnimationFrame(animateGarage);
+            
+            if(garagePlane) {
+                // Rotation automatique si on ne touche pas
+                if(!isDraggingPlane) garagePlane.rotation.y += garageRotationSpeed;
+                // Animation de l'hélice
+                if(garagePlane.userData.propeller) garagePlane.userData.propeller.rotation.z += 0.2;
+                // Petit flottement vertical
+                garagePlane.position.y = Math.sin(Date.now() * 0.002) * 0.5;
+            }
+            
+            garageRenderer.render(garageScene, garageCamera);
+        }
+
         init();
     </script>
 </body>
