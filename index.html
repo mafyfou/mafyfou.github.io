@@ -217,6 +217,9 @@
         .hidden { display: none !important; }
         h1 { font-size: 70px; color: #FF00FF; text-shadow: 4px 4px 0 #00FFFF; margin: 0; line-height: 0.9; text-align: center; font-style: italic; }
         h1 span { display: block; font-size: 35px; color: #FFFF00; text-shadow: 2px 2px 0 #FF0000; transform: rotate(-2deg); margin-top: 5px; font-style: normal;}
+    .quest-item { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2px; }
+.quest-completed { color: #00ff66 !important; text-decoration: line-through; font-weight: bold; }
+.quest-completed::after { content: " ✓"; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
@@ -288,6 +291,16 @@
 
     <div id="start-screen" class="overlay-screen">
         <h1>PLANE RUSH<span>HTML Madness</span></h1>
+        <div id="turbo-container" style="display:none; margin-bottom: 10px;">
+    <label style="color: #ff0055; font-weight: bold; font-size: 24px; cursor: pointer; text-shadow: 2px 2px 0 #fff; background: rgba(0,0,0,0.5); padding: 5px 10px; border: 2px solid #ff0055;">
+        <input type="checkbox" id="turbo-toggle"> 🚀 MODE TURBO (VITESSE x2)
+    </label>
+</div>
+
+<div id="daily-quests" style="width: 300px; background: rgba(0, 0, 0, 0.6); padding: 10px; border: 2px solid #444; margin-bottom: 15px; text-align: left;">
+    <h3 style="margin: 0 0 5px 0; color: #ffcc00; text-align: center; font-size: 20px;">QUÊTES DU JOUR</h3>
+    <ul id="quest-list-main" style="list-style: none; padding: 0; margin: 0; color: white; font-size: 16px;"></ul>
+</div>
         <div class="leaderboard-container"><div style="color:#FFFF00; margin-bottom:10px;">MEILLEURS PILOTES</div><div id="lb-start"></div></div>
         
         <div class="menu-row">
@@ -318,11 +331,13 @@
             <div id="skin-model-label" style="font-size:18px; color:#AAA;">MODÈLE A</div>
         </div>
 
-        <div class="menu-row" style="align-items: center; gap: 20px;">
-            <button class="btn" style="padding: 10px 20px;" onclick="changeSkin(-1)">◀</button>
-            <button class="btn" id="select-skin-btn" style="background:#00FF00; color:#000; border-color:#005500; width: 180px;" onclick="selectSkin()">CHOISIR</button>
-            <button class="btn" style="padding: 10px 20px;" onclick="changeSkin(1)">▶</button>
-        </div>
+        <div class="menu-row" style="align-items: center; gap: 10px; flex-wrap: nowrap; width: 100%; max-width: 500px;">
+    <button class="btn" style="padding: 10px 15px; margin: 0;" onclick="changeSkin(-1)">◀</button>
+    
+    <button class="btn" id="select-skin-btn" style="background:#00FF00; color:#000; border-color:#005500; width: 160px; margin: 0; font-size: 24px;" onclick="selectSkin()">CHOISIR</button>
+    
+    <button class="btn" style="padding: 10px 15px; margin: 0;" onclick="changeSkin(1)">▶</button>
+</div>
 
         <button class="btn btn-small" style="margin-top:20px;" onclick="closeSkinMenu()">RETOUR</button>
     </div>
@@ -375,6 +390,10 @@
     
     <div id="pause-screen" class="overlay-screen hidden">
         <h1>PAUSE</h1>
+        <div style="width: 300px; background: rgba(0, 0, 0, 0.6); padding: 10px; border: 1px solid #444; margin-bottom: 15px; text-align: left;">
+    <h3 style="margin: 0 0 5px 0; color: #ffcc00; text-align: center; font-size: 18px;">PROGRESSION</h3>
+    <ul id="quest-list-pause" style="list-style: none; padding: 0; margin: 0; color: white; font-size: 16px;"></ul>
+</div>
         <button class="btn" onclick="togglePause()">REPRENDRE</button>
         <button class="btn btn-small" onclick="quitToMenu()" style="margin-top:20px; background:#cc3333; color:#fff; border-color:#fff;">QUITTER</button>
         <div style="color:#CCC; margin-top:10px; font-size:18px;">(TAB / ECHAP pour Reprendre)</div>
@@ -403,6 +422,107 @@
 
         const PARTICLE_GEO = new THREE.BoxGeometry(0.8, 0.8, 0.8);
         const PARTICLE_MAT_BASE = new THREE.MeshBasicMaterial();
+
+        // --- SYSTÈME DE QUÊTES JOURNALIÈRES ---
+const QUEST_DB = [
+    { id: 1, text: "Distance: 5000m (Total)", type: 'dist', target: 5000, single: false },
+    { id: 2, text: "Distance: 2000m (1 Vie)", type: 'dist', target: 2000, single: true },
+    { id: 3, text: "Score: 2000 pts (1 Vie)", type: 'score', target: 2000, single: true },
+    { id: 4, text: "Score: 10000 pts (Total)", type: 'score', target: 10000, single: false },
+    { id: 5, text: "Faire un Combo x20", type: 'combo', target: 20, single: true },
+    { id: 6, text: "Éliminer 50 Ennemis (Total)", type: 'kill', target: 50, single: false },
+    { id: 7, text: "Ramasser 10 Bonus (Total)", type: 'collect', target: 10, single: false },
+    { id: 8, text: "Survivre 3000m (1 Vie)", type: 'dist', target: 3000, single: true }
+];
+
+let dailyQuests = [];
+let enemiesKilled = 0; // Nouvelle stat
+let itemsCollected = 0; // Nouvelle stat
+let isTurboMode = false;
+
+function initDailyQuests() {
+    const today = new Date().toDateString();
+    const savedDate = localStorage.getItem('pr_questDate');
+    const savedQuests = localStorage.getItem('pr_dailyQuests');
+
+    if (savedDate === today && savedQuests) {
+        dailyQuests = JSON.parse(savedQuests);
+    } else {
+        dailyQuests = [];
+        let pool = [...QUEST_DB];
+        for (let i = 0; i < 3; i++) {
+            if (pool.length === 0) break;
+            const ridx = Math.floor(Math.random() * pool.length);
+            dailyQuests.push({ ...pool.splice(ridx, 1)[0], progress: 0, completed: false });
+        }
+        saveQuests();
+        localStorage.setItem('pr_questDate', today);
+    }
+    checkTurboUnlock();
+    renderQuests();
+}
+
+function saveQuests() { localStorage.setItem('pr_dailyQuests', JSON.stringify(dailyQuests)); }
+
+function checkTurboUnlock() {
+    const allDone = dailyQuests.every(q => q.completed);
+    const turboDiv = document.getElementById('turbo-container');
+    if(turboDiv) turboDiv.style.display = allDone ? "block" : "none";
+}
+
+function renderQuests() {
+    ['quest-list-main', 'quest-list-pause'].forEach(id => {
+        const ul = document.getElementById(id);
+        if(!ul) return;
+        ul.innerHTML = '';
+        dailyQuests.forEach(q => {
+            const li = document.createElement('li');
+            li.className = 'quest-item';
+            let prog = q.completed ? q.target : q.progress;
+            if(q.single && !q.completed) prog = 0; // Cache la progression des "1 Vie" si pas fini
+            
+            // Si c'est un combo, on affiche juste l'objectif, sinon x/y
+            let txt = q.type === 'combo' ? q.text : `${q.text} (${Math.floor(prog)}/${q.target})`;
+            if(q.completed) txt = q.text;
+            
+            li.innerText = txt;
+            if(q.completed) li.classList.add('quest-completed');
+            ul.appendChild(li);
+        });
+    });
+}
+
+function updateLiveQuests(stats) {
+    let changed = false;
+    dailyQuests.forEach(q => {
+        if (q.completed) return;
+        let val = 0;
+        if (q.type === 'dist') val = stats.dist;
+        if (q.type === 'score') val = stats.score;
+        if (q.type === 'combo') val = stats.combo;
+        
+        if (q.single && val >= q.target) {
+            q.progress = q.target; q.completed = true; changed = true;
+            spawnFloatingText("QUÊTE OK!", plane.position, "#00FF66");
+            AudioSys.coin();
+        }
+    });
+    if (changed) { saveQuests(); renderQuests(); checkTurboUnlock(); }
+}
+
+function finalizeQuests(runStats) {
+    dailyQuests.forEach(q => {
+        if (q.completed || q.single) return;
+        if (q.type === 'dist') q.progress += runStats.dist;
+        if (q.type === 'score') q.progress += runStats.score;
+        if (q.type === 'kill') q.progress += runStats.kill;
+        if (q.type === 'collect') q.progress += runStats.collect;
+        
+        if (q.progress >= q.target) { q.progress = q.target; q.completed = true; }
+    });
+    saveQuests(); renderQuests(); checkTurboUnlock();
+}
+// --- FIN SYSTÈME QUÊTES ---
 
         const AudioSys = { 
             ctx: null, engineOsc: null, engineGain: null, bgMusic: null, menuMusic: null,
@@ -774,6 +894,7 @@ function openSkinMenu() {
         }
 
         function init() {
+            initDailyQuests();
             AudioSys.init(); if(typeof SimplexNoise !== 'undefined') simplex = new SimplexNoise();
             updateLeaderboardUI(); switchScreen('start-screen'); 
 
@@ -1050,36 +1171,53 @@ function openSkinMenu() {
             return group;
         }
 
-// --- NOUVEAU : GÉNÉRATEUR DE LACS ---
+// --- GÉNÉRATEUR DE LACS V2 (AVEC REFLETS & DÉTAILS) ---
         function createVoxelLake(biomeFogColor) {
             const group = new THREE.Group();
             
-            // Couleur de l'eau : On mixe du bleu avec la couleur du brouillard du biome pour l'intégration
-            // Si le biome est "Toxic" (vert), l'eau tirera un peu vers le vert, etc.
-            const waterBase = 0x4488FF;
-            // On fait une simulation de mélange simple ou on garde un bleu joli avec transparence
-            
-            // Partie principale de l'eau (Transparente)
-            group.add(createVoxelBox(6.0, 0.4, 6.0, waterBase, 0, 0.1, 0, false, 0.7, false));
-            
-            // Extensions pour casser la forme carrée
-            group.add(createVoxelBox(4.0, 0.4, 3.0, waterBase, 3.5, 0.1, 1.0, false, 0.7, false));
-            group.add(createVoxelBox(3.0, 0.4, 4.0, waterBase, -3.0, 0.1, -2.0, false, 0.7, false));
-            
-            // Bordures / Boue (couleur sombre)
-            const mudColor = 0x3E2723;
-            group.add(createVoxelBox(1.0, 0.3, 1.0, mudColor, 4.0, 0.1, 3.0, false, 1.0, false));
-            group.add(createVoxelBox(1.2, 0.3, 1.2, mudColor, -4.0, 0.1, 1.0, false, 1.0, false));
+            // 1. LE FOND (Boue sombre)
+            // On le fait un peu plus grand que l'eau pour créer une bordure naturelle
+            group.add(createVoxelBox(7.5, 0.4, 6.5, 0x3E2723, 0, -0.2, 0, false, 1.0, false));
 
-            // Roseaux (Tiges vertes avec bout marron)
+            // 2. L'EAU (Transparente + Couches)
+            const waterColor = 0x4488FF;
+            // Corps principal
+            group.add(createVoxelBox(6.5, 0.4, 5.5, waterColor, 0, 0.1, 0, false, 0.8, false));
+            // Extensions pour casser la forme carrée
+            group.add(createVoxelBox(2.5, 0.4, 3.0, waterColor, 3.5, 0.1, 1.0, false, 0.8, false));
+            group.add(createVoxelBox(3.5, 0.4, 2.0, waterColor, -2.5, 0.1, -2.5, false, 0.8, false));
+
+            // 3. "REFLETS" VOXEL (L'astuce esthétique)
+            // On pose des plaques très fines et claires pour simuler le soleil qui tape sur l'eau
+            const reflectionColor = 0xAAFFFF; 
+            // Reflet principal
+            group.add(createVoxelBox(1.0, 0.05, 1.0, reflectionColor, 1.5, 0.31, 1.0, true, 0.9, false));
+            // Petits scintillements
+            group.add(createVoxelBox(0.4, 0.05, 0.4, reflectionColor, -1.0, 0.31, -1.0, true, 0.9, false));
+            group.add(createVoxelBox(0.2, 0.05, 0.6, reflectionColor, 2.5, 0.31, -0.5, true, 0.9, false));
+
+            // 4. DÉTAILS DE FLORE
+            
+            // Nénuphar (Disque vert plat)
+            group.add(createVoxelBox(1.2, 0.1, 1.2, 0x44AA44, -1.5, 0.32, 1.5, false, 1.0, false));
+            // Petite fleur rose sur le nénuphar
+            group.add(createVoxelBox(0.3, 0.3, 0.3, 0xFF69B4, -1.5, 0.5, 1.5, false, 1.0, false));
+
+            // Rocher moussu sur le rivage
+            group.add(createVoxelBox(1.2, 0.6, 1.2, 0x555555, 3.5, 0.2, 2.5, false, 1.0, false)); // Pierre
+            group.add(createVoxelBox(1.0, 0.2, 1.0, 0x668844, 3.5, 0.6, 2.5, false, 1.0, false)); // Mousse
+
+            // Roseaux détaillés (Tiges fines)
             const reedGreen = 0x556B2F;
             const reedBrown = 0x8B4513;
-            
-            // Quelques roseaux aléatoires
-            const positions = [[2.5, 2.5], [2.8, 2.2], [-2.5, -2.5]];
+            // Positions aléatoires autour du lac
+            const positions = [[3.8, 1.5], [4.2, 1.0], [-3.2, -3.0]];
+
             positions.forEach(pos => {
-                group.add(createVoxelBox(0.1, 1.2, 0.1, reedGreen, pos[0], 0.6, pos[1], false, 1.0, false));
-                group.add(createVoxelBox(0.15, 0.4, 0.15, reedBrown, pos[0], 1.2, pos[1], false, 1.0, false));
+                // Tige
+                group.add(createVoxelBox(0.1, 1.4, 0.1, reedGreen, pos[0], 0.6, pos[1], false, 1.0, false));
+                // Tête du roseau (Cigare marron)
+                group.add(createVoxelBox(0.25, 0.5, 0.25, reedBrown, pos[0], 1.2, pos[1], false, 1.0, false));
             });
 
             return group;
@@ -1455,6 +1593,10 @@ function spawnObject() {
         function resetGame(){ document.getElementById('game-over-screen').classList.add('hidden'); document.getElementById('mobile-controls').classList.add('hidden'); switchScreen('start-screen'); AudioSys.startMenuMusic(); }
         
         function resetLogic(){
+            enemiesKilled = 0; 
+    itemsCollected = 0;
+    const turboBox = document.getElementById('turbo-toggle');
+    isTurboMode = (turboBox && turboBox.checked);
             score=0; distance=0; health=100; energy=100; invincibleTimer=0; birdShieldTimer=0; drillTimer=0;
             comboCount = 0; comboTimer = 0; currentComboMultiplier = 1.0; overdriveLevel = 0;
             document.getElementById('combo-wrapper').style.opacity = 0; document.getElementById('combo-container').classList.remove('combo-overdrive'); document.getElementById('overdrive-overlay').style.opacity = 0; document.getElementById('overdrive-overlay').classList.remove('pulsing-gold'); document.getElementById('combo-label-text').innerText = "COMBO !";
@@ -1497,6 +1639,7 @@ function spawnObject() {
              const ov = document.getElementById('damage-overlay'); ov.style.opacity=1; setTimeout(()=>ov.style.opacity=0,200); 
              if(health<=0){ 
                  health = 0; isPlaying=false; AudioSys.gameOver(); 
+                 finalizeQuests({ dist: distance, score: score, kill: enemiesKilled, collect: itemsCollected });
                  document.getElementById('final-score').innerText=`${score} PTS`; document.getElementById('final-dist').innerText=`${Math.floor(distance)}M`; 
                  document.getElementById('mobile-controls').classList.add('hidden'); switchScreen('game-over-screen'); if(document.pointerLockElement) document.exitPointerLock();
                  if(isHighScore(score)) { document.getElementById('highscore-form').classList.remove('hidden'); document.getElementById('player-name-input').value = ""; setTimeout(()=>document.getElementById('player-name-input').focus(), 100); } 
@@ -1592,6 +1735,7 @@ function spawnObject() {
                 gameSpeed = (base * mult) + boostAdd;
             }
             updateHUD(); 
+            updateLiveQuests({ dist: distance, score: score, combo: comboCount });
 
             if(gameSpeed > 3 && frameCount % Math.floor(3/fpsFactor) === 0) { const color = invincibleTimer > 0 ? 0xFF00FF : 0x00FFFF; spawnParticles(plane.position, color, 1); }
             
@@ -1644,12 +1788,13 @@ function spawnObject() {
                 else if(o.userData.type === 'alien_laser') { const beam = o.children.find(c => c.userData.isBeam); if(beam) { beam.material.opacity = 0.4 + Math.sin(frameCount * 0.5) * 0.2; } if(frameCount % 5 === 0) { const groundH = getTerrainHeight(o.position.x, o.position.z); const pPos = new THREE.Vector3(o.position.x + (Math.random()-0.5)*10, groundH + 1, o.position.z); spawnParticles(pPos, 0xFF4400, 1); } } 
 
                 if(!o.userData.dead && checkCollision(plane, o)) { 
+                    itemsCollected++;
                     const timeMultiplier = 1 + (distance / 5000); 
                     
                     if(o.userData.type==='bird'){ 
                         if (invincibleTimer > 0 || (isBoosting && energy > 0)) { 
                             let pts = Math.floor(500 * currentComboMultiplier * timeMultiplier);
-                            score += pts; triggerCombo(); AudioSys.smash(); spawnParticles(o.position, 0xff3333, 10); o.userData.dead = true; 
+                            score += pts; enemiesKilled++; triggerCombo(); AudioSys.smash(); spawnParticles(o.position, 0xff3333, 10); o.userData.dead = true; 
                             spawnFloatingText("+" + pts, o.position, "#FFD700");
                         } else if (birdShieldTimer > 0) { 
                             let pts = Math.floor(200 * currentComboMultiplier * timeMultiplier);
@@ -1660,7 +1805,7 @@ function spawnObject() {
                     else if(o.userData.type === 'balloon') { 
                         if (invincibleTimer > 0 || (isBoosting && energy > 0)) { 
                             let pts = Math.floor(1000 * currentComboMultiplier * timeMultiplier);
-                            score += pts; triggerCombo(); AudioSys.smash(); spawnParticles(o.position, 0xFFFFFF, 20); scene.remove(o); objects.splice(i,1); 
+                            score += pts; enemiesKilled++; triggerCombo(); AudioSys.smash(); spawnParticles(o.position, 0xFFFFFF, 20); scene.remove(o); objects.splice(i,1); 
                             spawnFloatingText("+" + pts, o.position, "#FFD700");
                         } else if (drillTimer > 0) { 
                             let pts = Math.floor(1000 * currentComboMultiplier * timeMultiplier);
@@ -1675,12 +1820,13 @@ function spawnObject() {
                             spawnFloatingText("+500", o.position, "#FFD700");
                         } else { takeDamage(50); plane.position.z += 2; } 
                     }
-                    else if(o.userData.type==='rocket') { activateInvincibleBoost(); score+=500; spawnParticles(o.position, CONFIG.colors.rocket, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("HYPER!", o.position, "#FF00FF"); }
-                    else if(o.userData.type==='drill') { activateDrill(); score+=500; spawnParticles(o.position, CONFIG.colors.drill, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("VRILLE!", o.position, "#FFFF00"); }
-                    else if(o.userData.type==='wrench') { healFull(); spawnParticles(o.position, CONFIG.colors.wrench, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("REPARE", o.position, "#00FF00"); }
-                    else if(o.userData.type==='fuel') { refillEnergy(); spawnParticles(o.position, CONFIG.colors.fuel, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("FUEL", o.position, "#FF0000"); }
-                    else if(o.userData.type==='missile') { activateBirdShield(); spawnParticles(o.position, CONFIG.colors.missile, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("BOUCLIER", o.position, "#00FFFF"); }
+                    else if(o.userData.type==='rocket') { itemsCollected++; activateInvincibleBoost(); score+=500; spawnParticles(o.position, CONFIG.colors.rocket, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("HYPER!", o.position, "#FF00FF"); }
+                    else if(o.userData.type==='drill') { itemsCollected++; activateDrill(); score+=500; spawnParticles(o.position, CONFIG.colors.drill, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("VRILLE!", o.position, "#FFFF00"); }
+                    else if(o.userData.type==='wrench') { itemsCollected++; healFull(); spawnParticles(o.position, CONFIG.colors.wrench, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("REPARE", o.position, "#00FF00"); }
+                    else if(o.userData.type==='fuel') { itemsCollected++; refillEnergy(); spawnParticles(o.position, CONFIG.colors.fuel, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("FUEL", o.position, "#FF0000"); }
+                    else if(o.userData.type==='missile') { itemsCollected++; activateBirdShield(); spawnParticles(o.position, CONFIG.colors.missile, 10); scene.remove(o); objects.splice(i,1); spawnFloatingText("BOUCLIER", o.position, "#00FFFF"); }
                     else { 
+                         itemsCollected++;
                         let pts = Math.floor(100 * currentComboMultiplier * timeMultiplier);
                         score+=pts; AudioSys.coin(); spawnParticles(o.position, CONFIG.colors.cloud, 5); scene.remove(o); objects.splice(i,1); 
                         spawnFloatingText("+" + pts, o.position, "#FFD700"); 
