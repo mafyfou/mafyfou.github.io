@@ -1635,15 +1635,19 @@ function spawnParticles(pos, c, count=6) {
             frameCount++; distance += gameSpeed * 0.1 * fpsFactor;
             if(wallHitTimer > 0) wallHitTimer -= fpsFactor;
             
-            sunMesh.position.z = plane.position.z - 450; 
-            sunMesh.position.x = plane.position.x * 0.3; 
-            sunMesh.position.y = 60;
+            const sunDist = 1200;
+            const sunZ = plane.position.z - sunDist;
+            const sunCurveX = getTrackOffset(sunZ);
+
+            sunMesh.position.z = sunZ;
+            sunMesh.position.x = sunCurveX;
+            sunMesh.position.y = 30;
 
             const sunLightObj = scene.children.find(c => c.isDirectionalLight);
             if(sunLightObj) {
-                sunLightObj.position.z = plane.position.z - 100; 
-                sunLightObj.position.x = plane.position.x - 30; 
-                sunLightObj.position.y = 60; 
+                sunLightObj.position.z = plane.position.z - 200;
+                sunLightObj.position.x = plane.position.x + (sunCurveX - plane.position.x) * 0.5;
+                sunLightObj.position.y = 80;
                 sunLightObj.target.position.set(plane.position.x, plane.position.y, plane.position.z);
                 sunLightObj.target.updateMatrixWorld();
             }
