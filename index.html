@@ -1061,22 +1061,31 @@ function getTrackOffset(z) {
                 group.add(createVoxelBox(0.5, 0.5, 1.0, 0x333333, -0.8, -0.8, 1.0, false, P_OPACITY, false));
             }
 
-            // --- MODÈLE B : INTERCEPTEUR ---
+            // --- MODÈLE B : INTERCEPTEUR (CORRECTION Z-FIGHTING) ---
             else if (skin.model === 'B') {
+                // Fuselage
                 group.add(createVoxelBox(0.6, 0.6, 2.0, 0x222222, 0, 0, -4.5, false, P_OPACITY, false));
                 group.add(createVoxelBox(1.2, 1.0, 2.0, cols.sec, 0, 0, -2.5, false, P_OPACITY, false));
                 group.add(createVoxelBox(1.6, 1.4, 4.0, cols.main, 0, 0, 0.5, false, P_OPACITY, false));
                 group.add(createVoxelBox(1.0, 0.5, 2.0, cols.glass, 0, 0.9, -1.0, false, 0.8, false));
                 
+                // AILE GAUCHE
                 const wingL = new THREE.Group();
-                wingL.add(createVoxelBox(2.0, 0.2, 1.0, cols.main, -1.8, 0, 1.0, false, P_OPACITY, false));
-                wingL.add(createVoxelBox(2.0, 0.2, 0.8, cols.sec, -3.5, 0, -0.5, false, P_OPACITY, false)); 
+                // Partie intérieure
+                wingL.add(createVoxelBox(2.2, 0.2, 1.5, cols.main, -1.6, 0, 0.8, false, P_OPACITY, false));
+                // Partie extérieure (Décalée de 0.01 en Y pour éviter le clignotement)
+                wingL.add(createVoxelBox(2.0, 0.2, 1.0, cols.sec, -3.2, 0.01, -0.2, false, P_OPACITY, false)); 
                 group.add(wingL);
+
+                // AILE DROITE
                 const wingR = new THREE.Group();
-                wingR.add(createVoxelBox(2.0, 0.2, 1.0, cols.main, 1.8, 0, 1.0, false, P_OPACITY, false));
-                wingR.add(createVoxelBox(2.0, 0.2, 0.8, cols.sec, 3.5, 0, -0.5, false, P_OPACITY, false));
+                // Partie intérieure
+                wingR.add(createVoxelBox(2.2, 0.2, 1.5, cols.main, 1.6, 0, 0.8, false, P_OPACITY, false));
+                // Partie extérieure (Décalée de 0.01 en Y aussi)
+                wingR.add(createVoxelBox(2.0, 0.2, 1.0, cols.sec, 3.2, 0.01, -0.2, false, P_OPACITY, false));
                 group.add(wingR);
 
+                // Queue
                 group.add(createVoxelBox(0.2, 1.5, 1.5, cols.sec, -0.8, 1.0, 2.0, false, P_OPACITY, false));
                 group.add(createVoxelBox(0.2, 1.5, 1.5, cols.sec, 0.8, 1.0, 2.0, false, P_OPACITY, false));
                 group.add(createVoxelBox(1.0, 1.0, 0.5, cols.glow, 0, 0, 2.5, true, 1.0, false));
