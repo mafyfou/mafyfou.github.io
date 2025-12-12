@@ -510,7 +510,6 @@ function finalizeQuests(runStats) {
         if (q.type === 'score') q.progress += runStats.score;
         if (q.type === 'kill') q.progress += runStats.kill;
         if (q.type === 'collect') q.progress += runStats.collect;
-        
         if (q.progress >= q.target) { q.progress = q.target; q.completed = true; }
     });
     saveQuests(); renderQuests(); checkTurboUnlock();
@@ -1218,7 +1217,7 @@ function createChunk(zPos) {
         let c = new THREE.Color(finalColor); 
         colors.push(c.r, c.g, c.b);
 
-        if (Math.random() > 0.99 && Math.abs(x) < 35) {
+        if (Math.random() > 0.995 && Math.abs(x) < 35) {
             
             const typeRnd = Math.random();
             let decor;
@@ -1511,11 +1510,11 @@ function spawnObject() {
 
 const SHARED_PARTICLE_GEO = new THREE.BoxGeometry(0.8, 0.8, 0.8);
 
-function spawnParticles(pos, c, count=6) { 
+function spawnParticles(pos, c, count=6, opacity=1.0) {
     const finalCount = isMobile ? Math.ceil(count / 2) : count;
 
     for(let i=0; i<finalCount; i++){ 
-        const mat = new THREE.MeshBasicMaterial({ color: c }); 
+        const mat = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: opacity }); 
         const m = new THREE.Mesh(SHARED_PARTICLE_GEO, mat); 
         m.position.copy(pos); 
         
@@ -1699,7 +1698,21 @@ function spawnParticles(pos, c, count=6) {
             updateHUD(); 
             updateLiveQuests({ dist: distance, score: score, combo: comboCount });
 
-            if(gameSpeed > 3 && frameCount % Math.floor(3/fpsFactor) === 0) { const color = invincibleTimer > 0 ? 0xFF00FF : 0x00FFFF; spawnParticles(plane.position, color, 1); }
+            const targetPlaneOpacity = (isBoosting || invincibleTimer > 0) ? 0.4 : 1.0;
+            
+            if(plane) {
+                plane.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material.transparent = true;
+                        child.material.opacity = 0.6; 
+                    }
+                });
+            }
+
+            if(gameSpeed > 3 && frameCount % Math.floor(3/fpsFactor) === 0) { 
+                const color = invincibleTimer > 0 ? 0xFF00FF : 0x00FFFF; 
+                spawnParticles(plane.position, color, 1, 0.3); 
+            }
             
             let targetPlayerOffset = 0; 
             let targetY = 0;
@@ -1791,11 +1804,11 @@ function spawnParticles(pos, c, count=6) {
             
             screenShake *= 0.9; if(screenShake < 0.01) screenShake = 0;
             
-            camera.position.x += (plane.position.x - camera.position.x) * 0.1 * fpsFactor + (Math.random()-0.5) * screenShake; 
+            camera.position.x += (plane.position.x - camera.position.x) * 0.35 * fpsFactor + (Math.random()-0.5) * screenShake; 
             camera.position.y = 10 + (plane.position.y * 0.3) + (Math.random()-0.5) * screenShake; 
             camera.position.z = plane.position.z + 28; 
             
-            const lookDist = 50;
+            const lookDist = 40;
             const futureTrackX = getTrackOffset(plane.position.z - lookDist);
             camera.lookAt(futureTrackX + playerLogicalX, plane.position.y, plane.position.z - lookDist);
             
