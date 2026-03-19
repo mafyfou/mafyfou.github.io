@@ -153,25 +153,90 @@
 
         /* === MOBILE CONTROLS === */
         #mobile-controls {
-            position: absolute; bottom: 10px; left: 0; width: 100%; height: 160px;
-            pointer-events: auto; z-index: 50;
-            display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px;
-            padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; touch-action: none;
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 200px;
+            pointer-events: none; z-index: 50;
+            padding: 0 16px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            box-sizing: border-box; touch-action: none;
         }
-        #joystick-zone { width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; position: relative; }
-        #joystick-base { width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 0 10px rgba(0,0,0,0.5); position: relative; }
-        #joystick-stick { width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(#00FFFF, #008888); border: 2px solid #FFF; box-shadow: 0 0 10px #00FFFF; position: absolute; top: 50%; left: 50%; margin-top: -25px; margin-left: -25px; pointer-events: none; }
-        #boost-zone { width: 120px; height: 140px; display: flex; align-items: center; justify-content: center; margin-right: 15px; }
-        #boost-btn {
-            width: 90px; height: 90px; border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #ff8800, #ff0000);
-            border: 4px solid #FFFFFF; color: #FFF;
+        /* Joystick — bottom-left */
+        #joystick-zone {
+            position: absolute; bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px;
+            width: 150px; height: 150px;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: auto;
+        }
+        #joystick-base {
+            width: 130px; height: 130px; border-radius: 50%;
+            background: rgba(0, 255, 255, 0.06);
+            border: 3px solid rgba(0, 255, 255, 0.35);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+        #joystick-stick {
+            width: 54px; height: 54px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #66FFFF, #00AAAA);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 12px #00FFFF, 0 2px 6px rgba(0,0,0,0.5);
+            position: absolute; top: 50%; left: 50%;
+            margin-top: -27px; margin-left: -27px;
+            pointer-events: none;
+        }
+        /* Right-side action buttons — stacked vertically */
+        #action-buttons {
+            position: absolute; bottom: calc(16px + env(safe-area-inset-bottom)); right: 16px;
+            display: flex; flex-direction: column; align-items: center; gap: 14px;
+            pointer-events: auto;
+        }
+        /* Shared button base */
+        .touch-action-btn {
+            border-radius: 50%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 18px; font-weight: bold; text-shadow: 1px 1px 0 #000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5), 0 0 15px #FF4500; transition: transform 0.1s;
+            font-family: 'VT323', monospace; font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            transition: transform 0.08s, box-shadow 0.08s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
-        #boost-btn:active { transform: scale(0.9); background: radial-gradient(circle at 30% 30%, #ffffff, #ff8800); color: #000; text-shadow: none; box-shadow: 0 0 25px #ffaa00; }
-        #boost-btn span { font-size: 30px; line-height: 20px; display: block; margin-bottom: 2px; }
+        .touch-action-btn:active, .touch-action-btn.pressed {
+            transform: scale(0.88);
+        }
+        .touch-action-btn .btn-icon {
+            font-size: 28px; line-height: 1; display: block; margin-bottom: 1px;
+        }
+        .touch-action-btn .btn-text {
+            font-size: 13px; letter-spacing: 1px; line-height: 1;
+        }
+        /* Boost button */
+        #boost-btn {
+            width: 80px; height: 80px;
+            background: radial-gradient(circle at 35% 35%, #FF9922, #CC2200);
+            border: 3px solid rgba(255, 255, 255, 0.85);
+            color: #FFF;
+            box-shadow: 0 0 14px rgba(255, 68, 0, 0.6), 0 3px 8px rgba(0,0,0,0.4);
+        }
+        #boost-btn:active, #boost-btn.pressed {
+            background: radial-gradient(circle at 35% 35%, #FFCC66, #FF6600);
+            box-shadow: 0 0 25px rgba(255, 136, 0, 0.8), 0 0 6px rgba(255,255,255,0.3);
+        }
+        /* Shoot button */
+        #shoot-btn {
+            width: 72px; height: 72px;
+            background: radial-gradient(circle at 35% 35%, #33FFAA, #008855);
+            border: 3px solid rgba(255, 255, 255, 0.85);
+            color: #FFF;
+            box-shadow: 0 0 14px rgba(0, 255, 136, 0.5), 0 3px 8px rgba(0,0,0,0.4);
+        }
+        #shoot-btn:active, #shoot-btn.pressed {
+            background: radial-gradient(circle at 35% 35%, #99FFCC, #00CC77);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.8), 0 0 6px rgba(255,255,255,0.3);
+        }
+        #shoot-btn .btn-icon { color: #CCFFEE; }
+        /* Ammo indicator on shoot button */
+        #shoot-btn .btn-ammo {
+            font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1; margin-top: 1px;
+        }
+        #shoot-btn .btn-ammo.empty { color: #FF4444; }
 
         /* === BUTTONS === */
         .btn {
@@ -257,19 +322,74 @@
         .icon-balloon { background: #FF2200; border-color: #FF8855; box-shadow: 0 0 8px #FF2200; }
         .icon-ufo { background: #333333; border-color: #00FF00; color: #FF0000; }
         .icon-bridge { background: #8B4513; border-color: #D2691E; }
-        .icon-ammo { background: #FF6600; border-color: #FFAA00; box-shadow: 0 0 8px #FF6600; }
-        .icon-laser { background: #00FF88; border-color: #FFFFFF; box-shadow: 0 0 8px #00FF88; }
+        .icon-ammo { background: #FF6600; border-color: #FFAA00; box-shadow: 0 0 10px #FF6600, 0 0 20px rgba(255,102,0,0.3); }
+        .icon-laser { background: #00FF88; border-color: #00FF88; box-shadow: 0 0 10px #00FF88, 0 0 20px rgba(0,255,136,0.3); color: #000; }
 
         /* === AMMO HUD === */
         #ammo-display {
             position: absolute; bottom: 180px; left: 20px;
             pointer-events: none; z-index: 11;
-            font-family: 'VT323', monospace; font-size: 26px;
-            color: #FF6600; text-shadow: 2px 2px 0 #000;
+            display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+            font-family: 'VT323', monospace;
         }
-        #ammo-display .ammo-icon { color: #FFAA00; margin-right: 5px; }
-        #ammo-display .ammo-count { color: #FFF; }
-        #ammo-display .ammo-empty { color: #FF0000; }
+        #ammo-display .ammo-header {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 18px; color: #00FF88; letter-spacing: 2px;
+            text-shadow: 0 0 6px #00FF88, 1px 1px 0 #000;
+        }
+        #ammo-display .ammo-header .ammo-icon {
+            font-size: 14px; color: #00FF88;
+            text-shadow: 0 0 8px #00FF88;
+        }
+        #ammo-display .ammo-bar-wrapper {
+            width: 140px; height: 14px;
+            background: #111; border: 2px solid #00FF88;
+            display: flex; align-items: center; padding: 1px;
+            box-shadow: 0 0 6px rgba(0, 255, 136, 0.4), inset 0 0 4px rgba(0, 0, 0, 0.8);
+        }
+        #ammo-display .ammo-bar-icon {
+            width: 16px; height: 100%;
+            background: #00FF88; color: #000;
+            display: flex; align-items: center; justify-content: center;
+            border-right: 2px solid #00FF88; margin-right: 2px;
+            font-size: 10px; font-weight: bold;
+        }
+        #ammo-display .ammo-bar-bg {
+            flex-grow: 1; height: 100%;
+            position: relative; background: #0a1a10;
+        }
+        #ammo-display .ammo-bar-fill {
+            height: 100%; width: 100%;
+            background: linear-gradient(90deg, #005533, #00FF88);
+            box-shadow: 0 0 5px #00FF88;
+            transition: width 0.15s linear;
+            position: relative;
+        }
+        #ammo-display .ammo-bar-fill::after {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.25) 3px);
+        }
+        #ammo-display .ammo-count-text {
+            font-size: 22px; color: #FFF;
+            text-shadow: 0 0 4px #00FF88, 1px 1px 0 #000;
+            margin-left: 6px; line-height: 1;
+        }
+        #ammo-display .ammo-count-text.ammo-empty {
+            color: #FF0044;
+            text-shadow: 0 0 6px #FF0044, 1px 1px 0 #000;
+            animation: ammoFlash 0.5s infinite alternate;
+        }
+        #ammo-display .ammo-bar-wrapper.ammo-depleted {
+            border-color: #FF0044;
+            box-shadow: 0 0 6px rgba(255, 0, 68, 0.4), inset 0 0 4px rgba(0, 0, 0, 0.8);
+        }
+        #ammo-display .ammo-bar-wrapper.ammo-depleted .ammo-bar-icon {
+            background: #FF0044; border-right-color: #FF0044;
+        }
+        @keyframes ammoFlash {
+            from { opacity: 1; } to { opacity: 0.4; }
+        }
         @media (min-aspect-ratio: 1/1) {
             #ammo-display { bottom: auto; top: 45%; left: 20px; }
         }
@@ -371,13 +491,28 @@
             <div id="joystick-zone">
                 <div id="joystick-base"><div id="joystick-stick"></div></div>
             </div>
-            <div id="boost-zone">
-                <div id="boost-btn"><span>&#9650;</span>BOOST</div>
+            <div id="action-buttons">
+                <div id="boost-btn" class="touch-action-btn">
+                    <span class="btn-icon">&#9650;</span>
+                    <span class="btn-text">BOOST</span>
+                </div>
+                <div id="shoot-btn" class="touch-action-btn">
+                    <span class="btn-icon">&#9670;</span>
+                    <span class="btn-text">LASER</span>
+                    <span class="btn-ammo" id="shoot-btn-ammo">30</span>
+                </div>
             </div>
         </div>
 
         <div id="ammo-display" class="hidden">
-            <span class="ammo-icon">&#9679;</span> LASER: <span class="ammo-count" id="ammo-count">30</span> / 30
+            <div class="ammo-header"><span class="ammo-icon">&#9670;</span> LASER</div>
+            <div style="display:flex;align-items:center;">
+                <div class="ammo-bar-wrapper" id="ammo-bar-wrapper">
+                    <div class="ammo-bar-icon">&#9670;</div>
+                    <div class="ammo-bar-bg"><div class="ammo-bar-fill" id="ammo-fill"></div></div>
+                </div>
+                <span class="ammo-count-text" id="ammo-count">30</span>
+            </div>
         </div>
     </div>
 
@@ -468,7 +603,7 @@
                 </div>
                 <div class="guide-section">
                     <div class="guide-title">CANON LASER</div>
-                    <div class="guide-item"><div class="guide-icon icon-laser">&#9679;</div><div class="guide-desc"><strong>TIR LASER</strong>Clic droit (souris) ou touche configurable. 5 tirs/sec, 30 balles max. 3 tirs pour &eacute;liminer un ennemi.</div></div>
+                    <div class="guide-item"><div class="guide-icon icon-laser">&#9670;</div><div class="guide-desc"><strong>TIR LASER</strong>Clic droit (souris), bouton LASER (tactile) ou touche configurable. 5 tirs/sec, 30 balles max. 3 tirs pour &eacute;liminer un ennemi.</div></div>
                 </div>
                 <div class="guide-section">
                     <div class="guide-title">DANGERS</div>
@@ -1334,8 +1469,14 @@
             }
         }, { passive: false });
 
-        boost.addEventListener('touchstart', e => { e.preventDefault(); isBoosting = true; }, { passive: false });
-        boost.addEventListener('touchend', e => { e.preventDefault(); isBoosting = false; }, { passive: false });
+        boost.addEventListener('touchstart', e => { e.preventDefault(); isBoosting = true; boost.classList.add('pressed'); }, { passive: false });
+        boost.addEventListener('touchend', e => { e.preventDefault(); isBoosting = false; boost.classList.remove('pressed'); }, { passive: false });
+        boost.addEventListener('touchcancel', e => { isBoosting = false; boost.classList.remove('pressed'); });
+
+        const shootBtn = $('shoot-btn');
+        shootBtn.addEventListener('touchstart', e => { e.preventDefault(); isShooting = true; shootBtn.classList.add('pressed'); }, { passive: false });
+        shootBtn.addEventListener('touchend', e => { e.preventDefault(); isShooting = false; shootBtn.classList.remove('pressed'); }, { passive: false });
+        shootBtn.addEventListener('touchcancel', e => { isShooting = false; shootBtn.classList.remove('pressed'); });
     }
 
     function setupPCControls() {
@@ -1928,6 +2069,91 @@
         return dx < hitX && dy < hitY && dz < hitZ;
     }
 
+    /* ========== LASER CANNON ========== */
+    function fireBullet() {
+        if (laserAmmo <= 0 || !isPlaying || isPaused || isIntro) return;
+        laserAmmo--;
+        AudioSys.play(900, 'square', 0.08, 0.15);
+
+        const bullet = new THREE.Mesh(BULLET_GEO, BULLET_MAT.clone());
+        bullet.position.copy(plane.position);
+        bullet.position.z -= 5;
+        // Inherit the plane's forward direction
+        const dir = new THREE.Vector3(0, 0, -1);
+        dir.applyQuaternion(plane.quaternion);
+        bullet.userData = { vel: dir.normalize().multiplyScalar(LASER_BULLET_SPEED) };
+        // Add a glow trail
+        const glowGeo = new THREE.BoxGeometry(0.2, 0.2, 3.0);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.3 });
+        bullet.add(new THREE.Mesh(glowGeo, glowMat));
+        scene.add(bullet);
+        bullets.push(bullet);
+    }
+
+    function updateBullets(fpsFactor) {
+        const timeMultiplier = 1 + distance / 5000;
+
+        for (let b = bullets.length - 1; b >= 0; b--) {
+            const bul = bullets[b];
+            bul.position.x += bul.userData.vel.x * fpsFactor;
+            bul.position.y += bul.userData.vel.y * fpsFactor;
+            bul.position.z += bul.userData.vel.z * fpsFactor;
+
+            // Remove if too far
+            if (bul.position.distanceTo(plane.position) > 500) {
+                scene.remove(bul);
+                bullets.splice(b, 1);
+                continue;
+            }
+
+            // Check collision with enemies (birds, balloons)
+            let bulletHit = false;
+            for (let i = objects.length - 1; i >= 0; i--) {
+                const o = objects[i];
+                const t = o.userData.type;
+                if (t !== 'bird' && t !== 'balloon') continue;
+                if (o.userData.dead) continue;
+
+                const dx = Math.abs(bul.position.x - o.position.x);
+                const dy = Math.abs(bul.position.y - o.position.y);
+                const dz = Math.abs(bul.position.z - o.position.z);
+
+                if (dx < LASER_HIT_RADIUS && dy < LASER_HIT_RADIUS && dz < LASER_HIT_RADIUS) {
+                    bulletHit = true;
+                    o.userData.hitCount = (o.userData.hitCount || 0) + 1;
+                    spawnParticles(bul.position, 0x00FF88, 3);
+
+                    if (o.userData.hitCount >= LASER_HITS_TO_KILL) {
+                        // Enemy destroyed by laser
+                        let pts = Math.floor((t === 'balloon' ? 1000 : 500) * currentComboMultiplier * timeMultiplier);
+                        score += pts;
+                        enemiesKilled++;
+                        triggerCombo();
+                        AudioSys.smash();
+                        spawnParticles(o.position, t === 'balloon' ? 0xFFFFFF : 0xff3333, 15);
+                        spawnFloatingText("+" + pts, o.position, "#00FF88");
+
+                        if (t === 'bird') {
+                            o.userData.dead = true;
+                        } else {
+                            scene.remove(o);
+                            objects.splice(i, 1);
+                        }
+                    } else {
+                        // Hit flash feedback
+                        spawnFloatingText("HIT", bul.position, "#00FF88");
+                    }
+                    break;
+                }
+            }
+
+            if (bulletHit) {
+                scene.remove(bul);
+                bullets.splice(b, 1);
+            }
+        }
+    }
+
     /* ========== GAME FLOW ========== */
     function startGame(mode) {
         controlMode = mode;
@@ -1941,6 +2167,7 @@
             $('mobile-controls').classList.add('hidden');
             if (controlMode === 'mouse') document.body.requestPointerLock();
         }
+        $('ammo-display').classList.remove('hidden');
         clock.start();
         resetLogic();
     }
@@ -1970,6 +2197,7 @@
         isPlaying = false;
         $('pause-screen').classList.add('hidden');
         $('mobile-controls').classList.add('hidden');
+        $('ammo-display').classList.add('hidden');
         AudioSys.startMenuMusic();
         resetGame();
         if (AudioSys.engineGain) AudioSys.engineGain.gain.value = 0;
@@ -1979,6 +2207,7 @@
     function resetGame() {
         $('game-over-screen').classList.add('hidden');
         $('mobile-controls').classList.add('hidden');
+        $('ammo-display').classList.add('hidden');
         switchScreen('start-screen');
         AudioSys.startMenuMusic();
     }
@@ -2007,9 +2236,13 @@
         joystickInput = { x: 0, y: 0 };
         keyInput = { x: 0, y: 0 };
         isBoosting = false;
+        isShooting = false;
+        laserAmmo = LASER_MAX_AMMO;
+        laserCooldown = 0;
 
         objects.forEach(o => scene.remove(o)); objects = [];
         particles.forEach(p => scene.remove(p)); particles = [];
+        bullets.forEach(b => scene.remove(b)); bullets = [];
 
         plane.position.set(0, 0, 0);
         plane.rotation.set(0, 0, 0);
@@ -2166,6 +2399,26 @@
                 if (overlay) $(overlay).style.opacity = 0;
             }
         });
+
+        // Ammo display
+        const ammoEl = $('ammo-count');
+        const ammoFill = $('ammo-fill');
+        const ammoBarW = $('ammo-bar-wrapper');
+        const shootBtnAmmo = $('shoot-btn-ammo');
+        if (ammoEl) {
+            ammoEl.innerText = laserAmmo;
+            const isEmpty = laserAmmo === 0;
+            ammoEl.className = isEmpty ? 'ammo-count-text ammo-empty' : 'ammo-count-text';
+            if (ammoFill) ammoFill.style.width = (laserAmmo / LASER_MAX_AMMO * 100) + '%';
+            if (ammoBarW) {
+                if (isEmpty) ammoBarW.classList.add('ammo-depleted');
+                else ammoBarW.classList.remove('ammo-depleted');
+            }
+            if (shootBtnAmmo) {
+                shootBtnAmmo.innerText = laserAmmo;
+                shootBtnAmmo.className = isEmpty ? 'btn-ammo empty' : 'btn-ammo';
+            }
+        }
     }
 
     /* ========== MAIN GAME LOOP ========== */
@@ -2383,6 +2636,14 @@
         let spawnRate = Math.max(5, 20 - distance / 1000);
         if (Math.floor(frameCount) % Math.floor(spawnRate / fpsFactor) === 0) spawnObject();
 
+        // === LASER CANNON ===
+        if (laserCooldown > 0) laserCooldown -= dt;
+        if (isShooting && laserCooldown <= 0 && laserAmmo > 0 && !isIntro) {
+            fireBullet();
+            laserCooldown = 1.0 / LASER_FIRE_RATE;
+        }
+        updateBullets(fpsFactor);
+
         // === OBJECTS UPDATE & COLLISIONS ===
         for (let i = objects.length - 1; i >= 0; i--) {
             let o = objects[i];
@@ -2514,6 +2775,14 @@
                     spawnParticles(o.position, CONFIG.colors.missile, 10);
                     scene.remove(o); objects.splice(i, 1);
                     spawnFloatingText("BOUCLIER", o.position, "#00FFFF");
+                }
+                else if (t === 'ammo') {
+                    itemsCollected++;
+                    laserAmmo = LASER_MAX_AMMO;
+                    AudioSys.fuel();
+                    spawnParticles(o.position, 0xFF6600, 10);
+                    scene.remove(o); objects.splice(i, 1);
+                    spawnFloatingText("LASER x30", o.position, "#FF6600");
                 }
                 else {
                     itemsCollected++;
