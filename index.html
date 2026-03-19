@@ -253,8 +253,11 @@
         .overlay-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(20, 0, 30, 0.95);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
             z-index: 100; transition: opacity 0.3s;
+            overflow-y: auto; overflow-x: hidden;
+            padding: 30px 16px; box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
         }
         h1 { font-size: 70px; color: #FF00FF; text-shadow: 4px 4px 0 #00FFFF; margin: 0; line-height: 0.9; text-align: center; font-style: italic; }
         h1 span { display: block; font-size: 35px; color: #FFFF00; text-shadow: 2px 2px 0 #FF0000; transform: rotate(-2deg); margin-top: 5px; font-style: normal; }
@@ -328,7 +331,7 @@
         /* === AMMO HUD === */
         #ammo-display {
             position: absolute; bottom: 180px; left: 20px;
-            pointer-events: none; z-index: 11;
+            pointer-events: none; z-index: 55;
             display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
             font-family: 'VT323', monospace;
         }
@@ -1321,6 +1324,7 @@
         let pBird = baseEnemy / 2;
         let pBalloon = baseEnemy / 2;
         let pOneItem = 0.25 / 6;
+        let pAmmo = pOneItem * 1.8;
         const cum = pBird + pBalloon;
         return {
             bird: pBird,
@@ -1330,7 +1334,7 @@
             rocket: cum + pOneItem * 3,
             missile: cum + pOneItem * 4,
             drill: cum + pOneItem * 5,
-            ammo: cum + pOneItem * 6
+            ammo: cum + pOneItem * 5 + pAmmo
         };
     }
 
