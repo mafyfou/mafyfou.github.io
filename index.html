@@ -253,11 +253,8 @@
         .overlay-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(20, 0, 30, 0.95);
-            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 100; transition: opacity 0.3s;
-            overflow-y: auto; overflow-x: hidden;
-            padding: 30px 16px; box-sizing: border-box;
-            -webkit-overflow-scrolling: touch;
         }
         h1 { font-size: 70px; color: #FF00FF; text-shadow: 4px 4px 0 #00FFFF; margin: 0; line-height: 0.9; text-align: center; font-style: italic; }
         h1 span { display: block; font-size: 35px; color: #FFFF00; text-shadow: 2px 2px 0 #FF0000; transform: rotate(-2deg); margin-top: 5px; font-style: normal; }
@@ -331,7 +328,7 @@
         /* === AMMO HUD === */
         #ammo-display {
             position: absolute; bottom: 180px; left: 20px;
-            pointer-events: none; z-index: 55;
+            pointer-events: none; z-index: 11;
             display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
             font-family: 'VT323', monospace;
         }
@@ -417,6 +414,25 @@
         .keybind-btn:hover { background: #00FFFF; color: #000; }
         .keybind-btn.listening { background: #FF00FF; color: #FFF; border-color: #FF00FF; animation: pulseOverdrive 0.5s infinite alternate; }
 
+        /* === BOUTIQUE UPGRADES === */
+        .upg-row {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(0,0,0,0.5); border: 2px solid #FF8800;
+            padding: 10px 14px; box-sizing: border-box;
+        }
+        .upg-icon { font-size: 28px; flex-shrink: 0; width: 36px; text-align: center; }
+        .upg-info { flex: 1; }
+        .upg-name { font-size: 22px; color: #FF8800; letter-spacing: 1px; }
+        .upg-desc { font-size: 15px; color: #AAA; }
+        .upg-bars { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+        .upg-bar { display: inline-block; width: 22px; height: 8px; background: #333; border: 1px solid #666; }
+        .upg-bar.filled { background: #FF8800; border-color: #FFAA00; }
+        .upg-level { font-size: 14px; color: #888; margin-left: 4px; }
+        .upg-action { flex-shrink: 0; text-align: center; }
+        .upg-maxed { color: #FFD700; font-size: 18px; letter-spacing: 1px; text-shadow: 0 0 8px #FFD700; }
+        .upg-buy { background: #FF8800 !important; color: #000 !important; border-color: #FFAA00 !important; font-size: 16px !important; padding: 6px 12px !important; }
+        .upg-poor { background: #333 !important; color: #666 !important; border-color: #444 !important; cursor: not-allowed !important; }
+
         /* === GARAGE === */
         .garage-3d {
             width: 300px; height: 250px;
@@ -429,14 +445,236 @@
 
         /* === RESPONSIVE === */
         @media (min-aspect-ratio: 1/1) {
-            .hud-top { padding: 10px 40px; align-items: center; }
-            .status-bars { width: 100%; max-width: 1200px; margin-bottom: 10px; }
-            .stats-row { width: auto; justify-content: center; gap: 40px; }
+            /* HUD plus compact en paysage (PC / tablette) */
+            .hud-top { padding: 6px 30px; align-items: center; gap: 3px; }
+            .status-bars { width: 100%; max-width: 900px; margin-bottom: 4px; }
+            .bar-wrapper { height: 18px; }
+            .bar-icon-box { width: 20px; font-size: 13px; }
+            .stats-row { width: auto; justify-content: center; gap: 30px; }
+            .hud-box { font-size: 18px; padding: 1px 6px; min-width: 60px; }
+            .hud-label { font-size: 11px; }
+            #pause-btn { width: 40px; height: 32px; font-size: 18px; order: 2; margin: 0; }
             .hud-box.score-box { order: 1; }
-            #pause-btn { order: 2; margin: 0; }
             .hud-box.dist-box { order: 3; }
             #combo-wrapper { bottom: auto; right: auto; top: 45%; left: 60%; transform: translateX(0); scale: 1.0; }
+            /* Boss HUD bien en-dessous du HUD compact */
+            #boss-hud { top: 78px; }
+            /* Mode-screen : quêtes + lb réduites sur PC */
+            #mode-screen .quests-panel,
+            #mode-screen .leaderboard-container { font-size: 13px; }
+            #mode-screen .quests-panel h3 { font-size: 15px; }
+            #mode-screen .mode-row { margin: 8px 0; }
         }
+
+        /* === RESPONSIVE GLOBAL — toutes tailles d'écran === */
+
+        /* Les écrans overlay peuvent défiler si le contenu dépasse la hauteur */
+        .overlay-screen {
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px;
+            box-sizing: border-box;
+            /* Safe-area (encoches iOS) */
+            padding-top: max(10px, env(safe-area-inset-top));
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+
+        /* Titres adaptatifs */
+        h1 { font-size: clamp(36px, 10vw, 70px); }
+        h1 span { font-size: clamp(20px, 5vw, 35px); }
+
+        /* Leaderboard / quests — ne plus déborder horizontalement */
+        .leaderboard-container { width: min(300px, 88vw); box-sizing: border-box; }
+        .quests-panel { width: min(300px, 88vw); box-sizing: border-box; }
+
+        /* HUD boxes adaptatives */
+        .hud-box { min-width: 60px; font-size: clamp(16px, 4vw, 24px); }
+
+        /* Boutons principaux */
+        .btn { font-size: clamp(20px, 5vw, 30px); padding: clamp(8px, 2vw, 15px) clamp(18px, 5vw, 40px); }
+        .btn-small { font-size: clamp(14px, 3.5vw, 20px); padding: clamp(5px, 1.5vw, 8px) clamp(8px, 2.5vw, 15px); }
+
+        /* Cartes de mode */
+        .mode-card { width: clamp(140px, 38vw, 240px); padding: clamp(10px, 2vw, 20px); }
+        .mode-card .mode-icon { font-size: clamp(36px, 8vw, 60px); }
+        .mode-card .mode-title { font-size: clamp(20px, 4.5vw, 32px); }
+        .mode-card .mode-desc { font-size: clamp(13px, 3vw, 18px); }
+
+        /* Cartes de boss */
+        .boss-option { width: clamp(120px, 28vw, 200px); padding: clamp(8px, 2vw, 15px); }
+        .boss-option .boss-opt-icon { font-size: clamp(30px, 7vw, 50px); }
+        .boss-option .boss-opt-name { font-size: clamp(16px, 3.5vw, 24px); }
+        .boss-option .boss-opt-diff { font-size: clamp(12px, 2.5vw, 18px); }
+        .boss-option .boss-opt-desc { font-size: clamp(11px, 2.2vw, 15px); }
+
+        /* Boss HUD — barre de vie plus étroite sur petits écrans */
+        #boss-hp-bar-wrapper { width: min(60%, 90vw); }
+        #boss-name-display { font-size: clamp(18px, 5vw, 28px); }
+
+        /* Audio settings */
+        .audio-settings-box { width: min(90%, 400px); box-sizing: border-box; }
+
+        /* Guide */
+        .guide-box { width: min(90%, 500px); height: min(70%, 85vh); box-sizing: border-box; }
+
+        /* Keybindings */
+        .keybind-box { width: min(90%, 450px); box-sizing: border-box; }
+
+        /* === PETITS ÉCRANS PORTRAIT (smartphones étroits) === */
+        @media (max-width: 400px) {
+            .mode-card { width: calc(50vw - 20px); }
+            .boss-option { width: calc(33vw - 14px); }
+            .boss-option .boss-opt-name { font-size: 13px; }
+            .boss-option .boss-opt-diff { font-size: 11px; }
+            .boss-option .boss-opt-desc { display: none; }
+        }
+
+        /* === ÉCRANS TRÈS COURTS (paysage sur téléphone) === */
+        @media (max-height: 500px) {
+            h1 { font-size: clamp(24px, 6vh, 45px); margin: 0; }
+            h1 span { font-size: clamp(14px, 3vh, 22px); }
+            #mode-screen .mode-row { margin: 8px 0; }
+            .mode-card { padding: 8px; }
+            .mode-card .mode-icon { font-size: 28px; margin-bottom: 4px; }
+            .boss-option { padding: 6px; }
+            .boss-option .boss-opt-icon { font-size: 24px; margin-bottom: 4px; }
+            .leaderboard-container { max-height: 25vh; overflow-y: auto; }
+            .quests-panel { max-height: 20vh; overflow-y: auto; }
+            #boss-hud { top: 55px; }
+        }
+
+        /* === MODE SELECTION === */
+        #mode-screen .mode-row {
+            display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 20px 0;
+        }
+        .mode-card {
+            background: rgba(10,0,30,0.9); border: 4px solid #FF00FF;
+            padding: 20px; width: 240px; text-align: center;
+            cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 0 15px rgba(255,0,255,0.4); font-family:'VT323',monospace; color:#FFF;
+        }
+        .mode-card:hover, .mode-card:active { transform: scale(1.04); box-shadow: 0 0 30px rgba(255,0,255,0.8); }
+        .mode-card .mode-icon { font-size: 60px; display: block; margin-bottom: 10px; }
+        .mode-card .mode-title { font-size: 32px; color: #FFFF00; text-shadow: 2px 2px 0 #FF0000; display: block; margin-bottom: 8px; }
+        .mode-card .mode-desc { font-size: 18px; color: #CCC; line-height: 1.2; }
+        .mode-card.boss-card { border-color: #FF4400; box-shadow: 0 0 15px rgba(255,68,0,0.4); }
+        .mode-card.boss-card:hover { box-shadow: 0 0 30px rgba(255,68,0,0.8); }
+
+        /* === BOSS SELECTION === */
+        #boss-select-screen .boss-options { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin: 15px 0; }
+        .boss-option {
+            background: rgba(10,0,20,0.95); border: 3px solid #FF4400;
+            padding: 15px; width: 200px; text-align: center; cursor: pointer;
+            transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+            font-family:'VT323',monospace; color:#FFF;
+        }
+        .boss-option:hover { transform: scale(1.05); border-color: #FF8800; box-shadow: 0 0 20px rgba(255,136,0,0.6); }
+        .boss-option .boss-opt-icon { font-size: 50px; display: block; margin-bottom: 8px; }
+        .boss-option .boss-opt-name { font-size: 24px; color: #FFD700; display: block; margin-bottom: 5px; }
+        .boss-option .boss-opt-diff { font-size: 18px; display: block; margin-bottom: 5px; }
+        .boss-option .boss-opt-desc { font-size: 15px; color: #AAA; }
+        .boss-option.easy { border-color: #00FF66; }
+        .boss-option.easy:hover { border-color: #00FF66; box-shadow: 0 0 20px rgba(0,255,102,0.6); }
+        .boss-option.medium { border-color: #FFAA00; }
+        .boss-option.medium:hover { border-color: #FFAA00; box-shadow: 0 0 20px rgba(255,170,0,0.6); }
+        .boss-option.hard { border-color: #FF0044; }
+        .boss-option.hard:hover { border-color: #FF0044; box-shadow: 0 0 20px rgba(255,0,68,0.6); }
+
+        /* === BOSS FIGHT HUD === */
+        #boss-hud {
+            position: absolute; top: 120px; left: 0; width: 100%;
+            padding: 8px 20px; box-sizing: border-box;
+            display: none; z-index: 15; pointer-events: none;
+            flex-direction: column; align-items: center; gap: 4px;
+        }
+        #boss-hud.active { display: flex; }
+        #boss-name-display {
+            font-size: 28px; color: #FF4400; text-shadow: 2px 2px 0 #000, 0 0 10px #FF4400;
+            letter-spacing: 3px; font-family:'VT323',monospace;
+        }
+        #boss-phase-display {
+            font-size: 18px; color: #FFAA00; font-family:'VT323',monospace; letter-spacing: 2px;
+        }
+        #boss-hp-bar-wrapper {
+            width: 60%; max-width: 600px; height: 20px;
+            background: #111; border: 2px solid #FF4400;
+            display: flex; align-items: center; padding: 2px;
+            box-shadow: 0 0 10px rgba(255,68,0,0.5);
+        }
+        #boss-hp-bar-icon {
+            width: 20px; height: 100%; background: #FF4400;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; color: #FFF; border-right: 2px solid #FF4400; margin-right: 2px;
+            font-family:'VT323',monospace;
+        }
+        #boss-hp-bg { flex-grow:1; height:100%; background:#220000; position:relative; }
+        #boss-hp-fill {
+            height: 100%; width: 100%;
+            background: linear-gradient(90deg, #880000, #FF4400);
+            box-shadow: 0 0 6px #FF4400; transition: width 0.2s linear;
+        }
+        #boss-hp-text {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            display: flex; align-items:center; justify-content:center;
+            font-size: 14px; color:#FFF; font-family:'VT323',monospace;
+            text-shadow: 1px 1px 0 #000;
+        }
+        #boss-invuln-notice {
+            font-size: 22px; color: #00FFFF; font-family:'VT323',monospace;
+            text-shadow: 0 0 8px #00FFFF; letter-spacing: 2px;
+            animation: pulseOverdrive 0.4s infinite alternate;
+            display: none;
+        }
+        #boss-invuln-notice.visible { display: block; }
+
+        /* === MAGAZINE DISPLAY === */
+        #magazine-row {
+            display: flex; align-items: center; gap: 5px; margin-top: 2px;
+        }
+        #mag-label { font-size: 14px; color: #00FF88; letter-spacing: 1px; font-family:'VT323',monospace; text-shadow: 0 0 4px #00FF88; }
+        .mag-icon {
+            width: 16px; height: 24px; border: 2px solid #00FF88;
+            background: #002211; box-shadow: 0 0 4px rgba(0,255,136,0.3);
+            transition: background 0.15s, box-shadow 0.15s;
+        }
+        .mag-icon.full { background: #00FF88; box-shadow: 0 0 6px #00FF88; }
+        #reload-notice {
+            font-size: 18px; color: #FF4400; font-family:'VT323',monospace;
+            animation: ammoFlash 0.3s infinite alternate; display: none;
+        }
+        #reload-notice.visible { display: block; }
+
+        /* === WEAKPOINT GLOW ANIM === */
+        @keyframes weakpointPulse {
+            0%   { opacity: 0.6; transform: scale(1); }
+            50%  { opacity: 1.0; transform: scale(1.15); }
+            100% { opacity: 0.6; transform: scale(1); }
+        }
+        /* Boss phase transition flash */
+        #phase-flash {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(255,100,0,0.5); opacity:0; pointer-events:none; z-index:60;
+            transition: opacity 0.1s;
+        }
+        /* Critical hit overlay */
+        #crit-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: radial-gradient(circle, transparent 40%, rgba(255,255,0,0.3) 100%);
+            opacity:0; pointer-events:none; z-index:51; transition: opacity 0.1s;
+        }
+        /* Boss defeat flash */
+        #boss-defeat-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(255,200,0,0.7); opacity:0; pointer-events:none; z-index:65;
+            transition: opacity 0.3s;
+        }
+        #boss-victory-screen {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(10,0,20,0.97);
+            display:flex; flex-direction:column; justify-content:center; align-items:center;
+            z-index:110;
+        }
+        #boss-victory-screen h1 { color:#FFD700; text-shadow:4px 4px 0 #FF4400; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
@@ -514,7 +752,14 @@
                     <div class="ammo-bar-icon">&#9670;</div>
                     <div class="ammo-bar-bg"><div class="ammo-bar-fill" id="ammo-fill"></div></div>
                 </div>
-                <span class="ammo-count-text" id="ammo-count">30</span>
+                <span class="ammo-count-text" id="ammo-count">60</span>
+            </div>
+            <div id="magazine-row">
+                <span id="mag-label">MAG:</span>
+                <div class="mag-icon" id="mag-0"></div>
+                <div class="mag-icon" id="mag-1"></div>
+                <div class="mag-icon" id="mag-2"></div>
+                <span id="reload-notice">RECHARGE!</span>
             </div>
         </div>
     </div>
@@ -523,61 +768,172 @@
     <div id="heal-overlay"></div>
     <div id="speed-overlay"></div>
     <div id="shield-overlay"></div>
+    <div id="phase-flash"></div>
+    <div id="crit-overlay"></div>
+    <div id="boss-defeat-overlay"></div>
 
-    <!-- ====== START SCREEN ====== -->
-    <div id="start-screen" class="overlay-screen">
-        <h1>PLANE RUSH<span>HTML Madness</span></h1>
+    <!-- Boss HUD -->
+    <div id="boss-hud">
+        <div id="boss-name-display">BOSS</div>
+        <div id="boss-phase-display">PHASE 1</div>
+        <div id="boss-hp-bar-wrapper">
+            <div id="boss-hp-bar-icon">&#9760;</div>
+            <div id="boss-hp-bg">
+                <div id="boss-hp-fill"></div>
+                <div id="boss-hp-text">1000 / 1000</div>
+            </div>
+        </div>
+        <div id="boss-invuln-notice">&#9888; TOUCHEZ LES POINTS FAIBLES !</div>
+    </div>
 
-        <div id="turbo-container" style="display:none; margin-bottom: 10px;">
+    <!-- ====== MODE SELECTION ====== -->
+    <div id="mode-screen" class="overlay-screen hidden">
+        <h1 style="margin-bottom:4px;">PLANE RUSH<span>HTML Madness</span></h1>
+
+        <!-- Crédits + boutons de navigation — toujours visibles en haut -->
+        <div class="coin-display" style="font-size:20px;color:#FFD700;margin-bottom:4px;"></div>
+        <div class="menu-row" style="margin:4px 0 8px 0;">
+            <button class="btn btn-small" style="width:auto;background:#FFD700;color:#000;" onclick="AudioSys.unlock();openSkinMenu()">GARAGE</button>
+            <button class="btn btn-small" style="background:#FF8800;color:#000;" onclick="AudioSys.unlock();openUpgradeShop()">BOUTIQUE</button>
+            <button class="btn btn-small" onclick="AudioSys.unlock();openGuide()">GUIDE</button>
+            <button class="btn btn-small" onclick="AudioSys.unlock();openAudioSettings()">PARAMS</button>
+            <button class="btn btn-small" onclick="AudioSys.unlock();openKeybindings()">TOUCHES</button>
+        </div>
+
+        <!-- Sélection du mode -->
+        <p style="color:#00FFFF;font-size:20px;margin:4px 0;">CHOISISSEZ VOTRE MODE</p>
+        <div class="mode-row">
+            <div class="mode-card" onclick="">
+                <span class="mode-icon">&#9992;</span>
+                <span class="mode-title">INFINITE RUNNER</span>
+                <span class="mode-desc" style="margin-bottom:8px;">Volez le plus loin possible dans le canyon.</span>
+                <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:6px;">
+                    <button class="btn btn-small" style="font-size:15px;padding:4px 9px;margin:0;" onclick="event.stopPropagation();startGame('touch')">TACTILE</button>
+                    <button class="btn btn-small" style="font-size:15px;padding:4px 9px;margin:0;" onclick="event.stopPropagation();startGame('mouse')">SOURIS</button>
+                    <button class="btn btn-small" style="font-size:15px;padding:4px 9px;margin:0;" onclick="event.stopPropagation();startGame('keyboard')">CLAVIER</button>
+                </div>
+            </div>
+            <div class="mode-card boss-card" onclick="switchScreen('boss-select-screen')">
+                <span class="mode-icon">&#128165;</span>
+                <span class="mode-title">BOSS FIGHTS</span>
+                <span class="mode-desc">Affrontez 3 boss épiques aux mécaniques uniques. Visez les points faibles pour des dégâts critiques !</span>
+            </div>
+        </div>
+
+        <!-- Progression + Classement -->
+        <div id="turbo-container" style="display:none; margin: 6px 0;">
             <label class="turbo-label">
                 <input type="checkbox" id="turbo-toggle"> &#128640; MODE TURBO (VITESSE x2)
             </label>
         </div>
-
-        <div class="quests-panel" id="daily-quests">
-            <h3>QU&Ecirc;TES DU JOUR</h3>
-            <ul id="quest-list-main"></ul>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;width:100%;">
+            <div class="quests-panel" id="daily-quests" style="flex:1;min-width:200px;max-width:320px;">
+                <h3>QU&Ecirc;TES DU JOUR</h3>
+                <ul id="quest-list-main"></ul>
+            </div>
+            <div class="leaderboard-container" style="flex:1;min-width:200px;max-width:320px;margin:0;">
+                <div style="color:#FFFF00; margin-bottom:5px;">MEILLEURS PILOTES</div>
+                <div id="lb-start"></div>
+            </div>
         </div>
+    </div>
 
-        <div class="leaderboard-container">
-            <div style="color:#FFFF00; margin-bottom:10px;">MEILLEURS PILOTES</div>
-            <div id="lb-start"></div>
+    <!-- ====== BOSS SELECTION ====== -->
+    <div id="boss-select-screen" class="overlay-screen hidden">
+        <h1 style="font-size:50px;color:#FF4400;text-shadow:3px 3px 0 #000;">BOSS FIGHTS</h1>
+        <p style="color:#FFD700;font-size:20px;margin:5px 0;">CHOISISSEZ VOTRE ADVERSAIRE</p>
+        <div class="boss-options">
+            <div class="boss-option easy">
+                <span class="boss-opt-icon">&#129413;</span>
+                <span class="boss-opt-name">THE BIRD KING</span>
+                <span class="boss-opt-diff" style="color:#00FF66;">&#11088; FACILE</span>
+                <span class="boss-opt-desc" style="display:block;margin-bottom:8px;">Le Roi des Oiseaux invoque ses sujets. 3 phases.</span>
+                <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(0,'touch')">TACTILE</button>
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(0,'mouse')">SOURIS</button>
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(0,'keyboard')">CLAVIER</button>
+                </div>
+            </div>
+            <div class="boss-option medium">
+                <span class="boss-opt-icon">&#127752;</span>
+                <span class="boss-opt-name">NYAN CAT</span>
+                <span class="boss-opt-diff" style="color:#FFAA00;">&#11088;&#11088; INTERMEDIAIRE</span>
+                <span class="boss-opt-desc" style="display:block;margin-bottom:8px;">Arcs-en-ciel destructeurs et spirales. 3 phases.</span>
+                <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(1,'touch')">TACTILE</button>
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(1,'mouse')">SOURIS</button>
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(1,'keyboard')">CLAVIER</button>
+                </div>
+            </div>
+            <div class="boss-option hard">
+                <span class="boss-opt-icon">&#128125;</span>
+                <span class="boss-opt-name">VAISSEAU-MÈRE</span>
+                <span class="boss-opt-diff" style="color:#FF0044;">&#11088;&#11088;&#11088; DIFFICILE</span>
+                <span class="boss-opt-desc" style="display:block;margin-bottom:8px;">Lasers, drones, boucliers. 5 phases infernales.</span>
+                <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(2,'touch')">TACTILE</button>
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(2,'mouse')">SOURIS</button>
+                    <button class="btn btn-small" style="font-size:14px;padding:4px 8px;margin:0;" onclick="startBossFight(2,'keyboard')">CLAVIER</button>
+                </div>
+            </div>
         </div>
+        <button class="btn btn-small" style="margin-top:15px;" onclick="switchScreen('mode-screen')">RETOUR</button>
+    </div>
 
-        <div class="menu-row">
-            <button class="btn btn-small" style="width:auto; background:#FFD700; color:#000;" onclick="AudioSys.unlock(); openSkinMenu()">GARAGE</button>
+    <!-- ====== BOSS VICTORY ====== -->
+    <div id="boss-victory-screen" class="overlay-screen hidden">
+        <h1 style="color:#FFD700;text-shadow:4px 4px 0 #FF4400;">VICTOIRE !</h1>
+        <div class="hud-box" style="align-items:center;margin:10px 0;">
+            <span class="hud-label">Rapport de Combat</span>
+            <span id="boss-final-score" style="font-size:28px;">0 PTS</span>
+            <span id="boss-final-hits" style="font-size:18px;color:#00FF88;">0 touches critiques</span>
+            <span id="boss-coins-earned" style="font-size:22px;color:#FFD700;display:none;margin-top:4px;"></span>
         </div>
-        <div class="menu-row" style="margin-top:10px;">
-            <button class="btn btn-small" onclick="AudioSys.unlock(); openGuide()">GUIDE</button>
-            <button class="btn btn-small" onclick="AudioSys.unlock(); openAudioSettings()">PARAMETRES</button>
-            <button class="btn btn-small" onclick="AudioSys.unlock(); openKeybindings()">TOUCHES</button>
+        <div id="boss-skin-unlock" style="display:none;background:rgba(255,215,0,0.15);border:2px solid #FFD700;padding:8px 16px;color:#FFD700;font-size:20px;text-align:center;margin-bottom:8px;"></div>
+        <div class="leaderboard-container"><div style="color:#FFD700;margin-bottom:8px;">TOP 5</div><div id="lb-boss-end"></div></div>
+        <div id="boss-highscore-form" class="hidden" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;background:rgba(0,50,0,0.6);padding:12px;border:2px solid #00FF00;">
+            <div style="color:#00FF00;font-size:22px;text-align:center;">NOUVEAU RECORD !<br>Nom :</div>
+            <input type="text" id="boss-player-name" maxlength="8" placeholder="PILOTE" style="background:#000;color:#00FF00;border:2px solid #00FF00;font-family:'VT323',monospace;font-size:28px;text-align:center;width:180px;padding:4px;text-transform:uppercase;">
+            <button class="btn btn-small" onclick="submitBossHighScore()" style="background:#00FF00;color:#000;border-color:#005500;">VALIDER</button>
         </div>
+        <button class="btn" onclick="returnToMenu()">MENU</button>
+        <button class="btn btn-small" onclick="switchScreen('boss-select-screen')" style="margin-top:8px;">REJOUER</button>
+    </div>
 
-        <p style="color:#00FFFF; font-size:20px; text-shadow:2px 2px 0 #FF00FF; margin:15px 0;">CHOISISSEZ VOS COMMANDES</p>
-        <div class="menu-row">
-            <button class="btn" onclick="startGame('touch')">TACTILE</button>
-            <button class="btn" onclick="startGame('mouse')">SOURIS</button>
-            <button class="btn" onclick="startGame('keyboard')">CLAVIER</button>
+    <!-- ====== START SCREEN (redirige vers mode-screen) ====== -->
+    <div id="start-screen" class="overlay-screen hidden">
+        <h1>PLANE RUSH<span>HTML Madness</span></h1>
+        <div class="menu-row" style="margin-top:20px;">
+            <button class="btn" style="background:#FF4400;box-shadow:0 0 15px #FF4400;" onclick="AudioSys.unlock(); switchScreen('mode-screen')">JOUER</button>
         </div>
     </div>
 
     <!-- ====== SKIN / GARAGE SCREEN ====== -->
     <div id="skin-screen" class="overlay-screen hidden">
-        <h2 style="color:#00FFFF; font-size:50px; margin-bottom:10px;">GARAGE</h2>
+        <h2 style="color:#00FFFF; font-size:44px; margin-bottom:4px;">GARAGE</h2>
+        <div class="coin-display" style="font-size:18px;color:#FFD700;margin-bottom:6px;"></div>
         <div class="garage-3d" id="garage-3d-container"></div>
         <div class="garage-hint">(FAITES TOURNER L'AVION)</div>
 
-        <div style="text-align:center; margin-bottom:10px;">
-            <div id="skin-name" style="font-size:30px; color:#FFF; text-shadow:2px 2px 0 #FF00FF;">NOM DU SKIN</div>
-            <div id="skin-model-label" style="font-size:18px; color:#AAA;">MOD&Egrave;LE A</div>
+        <div style="text-align:center; margin-bottom:8px;">
+            <div id="skin-name" style="font-size:28px; color:#FFF; text-shadow:2px 2px 0 #FF00FF;">NOM DU SKIN</div>
+            <div id="skin-model-label" style="font-size:16px; color:#AAA;">MOD&Egrave;LE A</div>
         </div>
 
         <div class="menu-row skin-nav-row">
             <button class="btn" style="padding:10px 15px; margin:0;" onclick="changeSkin(-1)">&#9664;</button>
-            <button class="btn" id="select-skin-btn" style="background:#00FF00; color:#000; border-color:#005500; width:160px; margin:0; font-size:24px;" onclick="selectSkin()">CHOISIR</button>
+            <button class="btn" id="select-skin-btn" style="background:#00FF00; color:#000; border-color:#005500; width:160px; margin:0; font-size:22px;" onclick="selectSkin()">CHOISIR</button>
             <button class="btn" style="padding:10px 15px; margin:0;" onclick="changeSkin(1)">&#9654;</button>
         </div>
-        <button class="btn btn-small" style="margin-top:20px;" onclick="closeSkinMenu()">RETOUR</button>
+        <button class="btn btn-small" style="margin-top:14px;" onclick="closeSkinMenu()">RETOUR</button>
+    </div>
+
+    <!-- ====== UPGRADE SHOP ====== -->
+    <div id="upgrade-screen" class="overlay-screen hidden">
+        <h2 style="color:#FF8800;font-size:44px;margin-bottom:4px;">BOUTIQUE</h2>
+        <div class="coin-display" style="font-size:20px;color:#FFD700;margin-bottom:10px;"></div>
+        <div id="upgrade-list" style="width:min(90%,520px);display:flex;flex-direction:column;gap:10px;"></div>
+        <button class="btn btn-small" style="margin-top:16px;" onclick="closeUpgradeShop()">RETOUR</button>
     </div>
 
     <!-- ====== GUIDE SCREEN ====== -->
@@ -758,7 +1114,7 @@
 
     function closeKeybindings() {
         activeKeybindAction = null;
-        switchScreen('start-screen');
+        switchScreen('mode-screen');
     }
 
     function keyDisplayName(key) {
@@ -809,17 +1165,42 @@
     }
 
     /* ========== LASER CANNON ========== */
-    const LASER_MAX_AMMO = 30;
-    const LASER_FIRE_RATE = 5; // shots per second
+    const LASER_MAX_AMMO = 60;
+    const LASER_FIRE_RATE = 7.5; // shots per second (1.5x of original 5)
     const LASER_BULLET_SPEED = 12;
     const LASER_HIT_RADIUS = 4;
     const LASER_HITS_TO_KILL = 3;
+    const LASER_MAX_MAGAZINES_BASE = 3;
     let laserAmmo = LASER_MAX_AMMO;
+    let laserMagazines = 0; // extra magazines (each = LASER_MAX_AMMO bullets)
     let laserCooldown = 0;
     let isShooting = false;
     let bullets = [];
     const BULLET_GEO = new THREE.BoxGeometry(0.4, 0.4, 1.5);
     const BULLET_MAT = new THREE.MeshBasicMaterial({ color: 0x00FF88, emissive: 0x00FF88 });
+
+    /* ========== GAME MODE ========== */
+    let gameMode = 'runner'; // 'runner' | 'boss'
+    let pendingBossIndex = -1;
+
+    /* ========== BOSS STATE ========== */
+    const BOSS_DEFS = [
+        { name: "THE BIRD KING", phases: 3, maxHp: 1200, hpPerPhase: [400, 400, 400] },
+        { name: "NYAN CAT",      phases: 3, maxHp: 2000, hpPerPhase: [700, 700, 600] },
+        { name: "VAISSEAU-MÈRE", phases: 5, maxHp: 4000, hpPerPhase: [800, 800, 800, 800, 800] }
+    ];
+    let activeBoss = null;        // THREE.Group
+    let bossData = null;          // runtime state
+    let bossWeakpoints = [];      // { mesh, active, damage }
+    let bossProjectiles = [];     // enemy bullets/projectiles
+    let bossSpawnedObstacles = [];// obstacles spawned by boss attacks
+    let bossPhaseTimer = 0;
+    let bossAttackTimer = 0;
+    let bossAttackCooldown = 120; // frames
+    let bossInvulnTimer = 0;
+    let bossDefeated = false;
+    let bossCritHits = 0;
+    let bossPowerupTimer = 3; // premières secondes de grâce avant le 1er power-up
 
     /* ========== DAILY QUESTS ========== */
     const QUEST_DB = [
@@ -1027,6 +1408,11 @@
         $(id).classList.remove('hidden');
         selectedBtnIndex = 0;
         updateMenuSelection();
+        // Rafraîchir les quêtes et le leaderboard à chaque retour au menu principal
+        if (id === 'mode-screen') {
+            if (typeof renderQuests === 'function') renderQuests();
+            if (typeof updateLeaderboardUI === 'function') updateLeaderboardUI();
+        }
     }
 
     function updateMenuSelection() {
@@ -1063,9 +1449,22 @@
 
     /* ========== MENU SCREENS ========== */
     function openGuide() { switchScreen('guide-screen'); }
-    function closeGuide() { switchScreen('start-screen'); }
+    function closeGuide() { switchScreen('mode-screen'); }
 
-    function openAudioSettings() {
+    function returnToMenu() {
+        isPaused = false; isPlaying = false; gameMode = 'runner';
+        $('pause-screen').classList.add('hidden');
+        $('mobile-controls').classList.add('hidden');
+        $('ammo-display').classList.add('hidden');
+        $('boss-hud').classList.remove('active');
+        $('boss-victory-screen').classList.add('hidden');
+        AudioSys.startMenuMusic();
+        resetGame();
+        if (AudioSys.engineGain) AudioSys.engineGain.gain.value = 0;
+        if (document.pointerLockElement) document.exitPointerLock();
+    }
+
+function openAudioSettings() {
         switchScreen('audio-screen');
         const slider = $('res-slider');
         if (renderScale === 0) {
@@ -1077,7 +1476,7 @@
         }
     }
 
-    function closeAudioSettings() { switchScreen('start-screen'); }
+    function closeAudioSettings() { switchScreen('mode-screen'); }
 
     function updateAudioSettings(type, val) {
         const pct = parseInt(val);
@@ -1125,11 +1524,131 @@
         { name: "VOID RUNNER",  model: 'B', colors: { main: 0x220044, sec: 0x000000, glass: 0xFFFFFF, glow: 0x8A2BE2 } },
         { name: "HEAVY METAL",  model: 'C', colors: { main: 0x5D4037, sec: 0x3E2723, glass: 0xFFA500, glow: 0xFFA500 } },
         { name: "ARCTIC FOX",   model: 'C', colors: { main: 0xDDEEFF, sec: 0x88CCFF, glass: 0x0000FF, glow: 0x00FFFF } },
-        { name: "TOXIC HAZARD", model: 'C', colors: { main: 0x112211, sec: 0x00FF00, glass: 0x00FF00, glow: 0x00FF00 } }
+        { name: "TOXIC HAZARD", model: 'C', colors: { main: 0x112211, sec: 0x00FF00, glass: 0x00FF00, glow: 0x00FF00 } },
+        // === SKINS BOSS (débloqués en battant le boss correspondant) ===
+        { name: "PLUMES ROYALES",  model: 'A', colors: { main: 0xFFD700, sec: 0xFF4400, glass: 0xFFFFA0, glow: 0xFFAA00 }, bossUnlock: 0 },
+        { name: "NYAN SPECTER",    model: 'B', colors: { main: 0xFF69B4, sec: 0x220033, glass: 0xFFFF00, glow: 0xFF00FF }, bossUnlock: 1 },
+        { name: "VAISSEAU-X",      model: 'C', colors: { main: 0x001133, sec: 0x00FF88, glass: 0x00FFFF, glow: 0x00FF88 }, bossUnlock: 2 }
     ];
 
     let currentSkinIndex = 0;
     let previewSkinIndex = 0;
+
+    /* ========== BOSS VICTORIES ========== */
+    function getBossVictories() { return JSON.parse(localStorage.getItem('pr_bossVictories') || '[]'); }
+    function saveBossVictory(idx) {
+        const v = getBossVictories();
+        if (!v.includes(idx)) { v.push(idx); localStorage.setItem('pr_bossVictories', JSON.stringify(v)); }
+    }
+    function isSkinUnlocked(skinIdx) {
+        const skin = SKINS[skinIdx];
+        if (skin.bossUnlock === undefined) return true; // skin de base
+        return getBossVictories().includes(skin.bossUnlock);
+    }
+
+    /* ========== MONNAIE ========== */
+    function getCoins() { return parseInt(localStorage.getItem('pr_coins') || '0'); }
+    function addCoins(n) {
+        const total = getCoins() + n;
+        localStorage.setItem('pr_coins', total);
+        updateCoinDisplay();
+    }
+    function spendCoins(n) {
+        const total = Math.max(0, getCoins() - n);
+        localStorage.setItem('pr_coins', total);
+        updateCoinDisplay();
+    }
+    function updateCoinDisplay() {
+        const coins = getCoins();
+        document.querySelectorAll('.coin-display').forEach(el => {
+            el.innerText = '🪙 ' + coins.toLocaleString() + ' crédits';
+        });
+        // Refresh upgrade buttons if shop is open
+        if (!$('upgrade-screen').classList.contains('hidden')) renderUpgradeShop();
+    }
+
+    /* ========== UPGRADES ========== */
+    const UPGRADE_DEFS = [
+        { id: 'armor',   label: 'BLINDAGE',        icon: '🛡',  desc: '+30 PV maximum par niveau',        maxLevel: 3, costs: [300,  700, 1500] },
+        { id: 'fuel',    label: 'RÉSERVOIRS',       icon: '⚡',  desc: '+25 énergie max par niveau',       maxLevel: 3, costs: [200,  500, 1000] },
+        { id: 'laser',   label: 'CHARGEUR+',        icon: '🔫',  desc: '+1 chargeur laser max par niveau', maxLevel: 2, costs: [400,  900]       },
+        { id: 'engine',  label: 'SURCOMPRESSEUR',   icon: '🚀',  desc: '+6% vitesse de base par niveau',  maxLevel: 2, costs: [600, 1400]       },
+    ];
+    let upgradeMaxHealth = 100;
+    let upgradeMaxEnergy = 100;
+    let upgradeMaxMagsBonus = 0;
+    let upgradeSpeedMult = 1.0;
+
+    function getUpgrades() { return JSON.parse(localStorage.getItem('pr_upgrades') || '{}'); }
+    function saveUpgrades(u) { localStorage.setItem('pr_upgrades', JSON.stringify(u)); }
+
+    function getMaxMags() { return LASER_MAX_MAGAZINES_BASE + upgradeMaxMagsBonus; }
+
+    function applyUpgrades() {
+        const u = getUpgrades();
+        upgradeMaxHealth    = 100 + (u.armor  || 0) * 30;
+        upgradeMaxEnergy    = 100 + (u.fuel   || 0) * 25;
+        upgradeMaxMagsBonus = (u.laser  || 0);
+        upgradeSpeedMult    = 1.0 + (u.engine || 0) * 0.06;
+    }
+
+    function buyUpgrade(id) {
+        const def = UPGRADE_DEFS.find(d => d.id === id);
+        if (!def) return;
+        const u = getUpgrades();
+        const cur = u[id] || 0;
+        if (cur >= def.maxLevel) return;
+        const cost = def.costs[cur];
+        if (getCoins() < cost) {
+            spawnFloatingText('PAS ASSEZ !', { x: 0, y: 0, z: 0 }, '#FF0044');
+            return;
+        }
+        spendCoins(cost);
+        u[id] = cur + 1;
+        saveUpgrades(u);
+        applyUpgrades();
+        AudioSys.coin();
+        renderUpgradeShop();
+    }
+
+    function openUpgradeShop() {
+        switchScreen('upgrade-screen');
+        renderUpgradeShop();
+    }
+    function closeUpgradeShop() { switchScreen('mode-screen'); }
+
+    function renderUpgradeShop() {
+        const u = getUpgrades();
+        const coins = getCoins();
+        const container = $('upgrade-list');
+        if (!container) return;
+        container.innerHTML = UPGRADE_DEFS.map(def => {
+            const cur = u[def.id] || 0;
+            const maxed = cur >= def.maxLevel;
+            const cost = maxed ? 0 : def.costs[cur];
+            const canAfford = coins >= cost;
+            const bars = Array.from({length: def.maxLevel}, (_,i) =>
+                `<span class="upg-bar ${i < cur ? 'filled' : ''}"></span>`
+            ).join('');
+            return `<div class="upg-row">
+                <div class="upg-icon">${def.icon}</div>
+                <div class="upg-info">
+                    <div class="upg-name">${def.label}</div>
+                    <div class="upg-desc">${def.desc}</div>
+                    <div class="upg-bars">${bars} <span class="upg-level">${cur}/${def.maxLevel}</span></div>
+                </div>
+                <div class="upg-action">
+                    ${maxed
+                        ? `<div class="upg-maxed">MAX</div>`
+                        : `<button class="btn btn-small upg-buy ${canAfford ? '' : 'upg-poor'}"
+                              onclick="buyUpgrade('${def.id}')" ${canAfford ? '' : 'disabled'}>
+                              🪙 ${cost.toLocaleString()}
+                           </button>`
+                    }
+                </div>
+            </div>`;
+        }).join('');
+    }
 
     function openSkinMenu() {
         switchScreen('skin-screen');
@@ -1143,7 +1662,7 @@
 
     function closeSkinMenu() {
         isGarageOpen = false;
-        switchScreen('start-screen');
+        switchScreen('mode-screen');
     }
 
     function changeSkin(dir) {
@@ -1156,24 +1675,37 @@
 
     function updateSkinPreview() {
         const skin = SKINS[previewSkinIndex];
-        $('skin-name').innerText = skin.name;
+        const unlocked = isSkinUnlocked(previewSkinIndex);
+
+        // Nom + badge verrouillé
+        const bossNames = ["THE BIRD KING", "NYAN CAT", "VAISSEAU-MÈRE"];
+        $('skin-name').innerText = unlocked ? skin.name : '🔒 ' + skin.name;
+        $('skin-name').style.color = skin.bossUnlock !== undefined ? (unlocked ? '#FFD700' : '#888') : '#FFF';
 
         const modelNames = { A: "STANDARD MK-1", B: "INTERCEPTOR CLASS", C: "HEAVY BOMBER" };
-        $('skin-model-label').innerText = modelNames[skin.model] || "STANDARD MK-1";
+        const modelLabel = modelNames[skin.model] || "STANDARD MK-1";
+        const unlockHint = (!unlocked && skin.bossUnlock !== undefined)
+            ? ` — Battre ${bossNames[skin.bossUnlock]}` : '';
+        $('skin-model-label').innerText = modelLabel + unlockHint;
 
         const btn = $('select-skin-btn');
-        if (previewSkinIndex === currentSkinIndex) {
-            btn.innerText = "EQUIPE";
-            btn.style.background = "#555";
-            btn.style.color = "#FFF";
+        if (!unlocked) {
+            btn.innerText = "🔒 VERROUILLÉ";
+            btn.style.background = "#333"; btn.style.color = "#888";
+            btn.style.borderColor = "#555"; btn.disabled = true;
+        } else if (previewSkinIndex === currentSkinIndex) {
+            btn.innerText = "ÉQUIPÉ ✓";
+            btn.style.background = "#555"; btn.style.color = "#FFF";
+            btn.style.borderColor = "#FFF"; btn.disabled = false;
         } else {
             btn.innerText = "CHOISIR";
-            btn.style.background = "#00FF00";
-            btn.style.color = "#000";
+            btn.style.background = "#00FF00"; btn.style.color = "#000";
+            btn.style.borderColor = "#005500"; btn.disabled = false;
         }
     }
 
     function selectSkin() {
+        if (!isSkinUnlocked(previewSkinIndex)) return;
         currentSkinIndex = previewSkinIndex;
         AudioSys.coin();
         createVoxelPlane();
@@ -1324,7 +1856,6 @@
         let pBird = baseEnemy / 2;
         let pBalloon = baseEnemy / 2;
         let pOneItem = 0.25 / 6;
-        let pAmmo = pOneItem * 1.8;
         const cum = pBird + pBalloon;
         return {
             bird: pBird,
@@ -1334,7 +1865,7 @@
             rocket: cum + pOneItem * 3,
             missile: cum + pOneItem * 4,
             drill: cum + pOneItem * 5,
-            ammo: cum + pOneItem * 5 + pAmmo
+            ammo: cum + pOneItem * 6
         };
     }
 
@@ -1355,10 +1886,12 @@
     function init() {
         loadKeybindings();
         initDailyQuests();
+        applyUpgrades();
         AudioSys.init();
         if (typeof SimplexNoise !== 'undefined') simplex = new SimplexNoise();
         updateLeaderboardUI();
-        switchScreen('start-screen');
+        updateCoinDisplay();
+        switchScreen('mode-screen');
 
         scene = new THREE.Scene();
         scene.fog = new THREE.Fog(CONFIG.biomes[0].fog, 600, 2500);
@@ -1859,41 +2392,51 @@
     }
 
     /* ========== OBJECT SPAWNING ========== */
-    function spawnObject() {
+    function spawnObject(bossMode = false) {
         if (isIntro) return;
         const thresholds = getSpawnThresholds(distance);
         const r = Math.random();
-        const spawnZ = plane.position.z - 400;
+        // En mode boss : power-ups entre le joueur et le boss (boss est à -160)
+        const spawnZ = bossMode ? plane.position.z - 70 : plane.position.z - 400;
         const trackCenter = getTrackOffset(spawnZ);
 
-        // Alien laser
-        if (distance > 1500 && Math.random() < 0.15) {
-            const m = createAlienLaserUnit();
-            let relX = (Math.random() - 0.5) * 66;
-            m.userData = { type: 'alien_laser', baseScale: 1.0, relativeX: relX };
-            m.position.set(trackCenter + relX, 50, spawnZ);
-            scene.add(m); objects.push(m);
-            return;
-        }
-        // Bridge
-        if (distance > 1500 && Math.random() < 0.10) {
-            const m = createBridge();
-            m.userData = { type: 'bridge', baseScale: 1.0, relativeX: 0 };
-            m.position.set(trackCenter, 5, spawnZ);
-            scene.add(m); objects.push(m);
-            return;
+        if (!bossMode) {
+            // Alien laser
+            if (distance > 1500 && Math.random() < 0.15) {
+                const m = createAlienLaserUnit();
+                let relX = (Math.random() - 0.5) * 66;
+                m.userData = { type: 'alien_laser', baseScale: 1.0, relativeX: relX };
+                m.position.set(trackCenter + relX, 50, spawnZ);
+                scene.add(m); objects.push(m);
+                return;
+            }
+            // Bridge
+            if (distance > 1500 && Math.random() < 0.10) {
+                const m = createBridge();
+                m.userData = { type: 'bridge', baseScale: 1.0, relativeX: 0 };
+                m.position.set(trackCenter, 5, spawnZ);
+                scene.add(m); objects.push(m);
+                return;
+            }
         }
 
         // Standard objects
         let type = 'cloud';
-        if      (r < thresholds.bird)    type = 'bird';
-        else if (r < thresholds.balloon) type = 'balloon';
-        else if (r < thresholds.wrench)  type = 'wrench';
-        else if (r < thresholds.fuel)    type = 'fuel';
-        else if (r < thresholds.rocket)  type = 'rocket';
-        else if (r < thresholds.missile) type = 'missile';
-        else if (r < thresholds.drill)   type = 'drill';
-        else if (r < thresholds.ammo)    type = 'ammo';
+        if (bossMode) {
+            // En mode boss : uniquement des objets bénéfiques, pas d'obstacles
+            // Pondération : soins > énergie > munitions > autres
+            const pool = ['wrench','wrench','wrench','fuel','fuel','ammo','ammo','rocket','shield','drill'];
+            type = pool[Math.floor(Math.random() * pool.length)];
+        } else {
+            if      (r < thresholds.bird)    type = 'bird';
+            else if (r < thresholds.balloon) type = 'balloon';
+            else if (r < thresholds.wrench)  type = 'wrench';
+            else if (r < thresholds.fuel)    type = 'fuel';
+            else if (r < thresholds.rocket)  type = 'rocket';
+            else if (r < thresholds.missile) type = 'missile';
+            else if (r < thresholds.drill)   type = 'drill';
+            else if (r < thresholds.ammo)    type = 'ammo';
+        }
 
         let m;
         let baseScale = 1.3;
@@ -2045,12 +2588,35 @@
             const mat = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity });
             const m = new THREE.Mesh(SHARED_PARTICLE_GEO, mat);
             m.position.copy(pos);
+            const maxLife = 35;
             m.userData = {
                 vel: new THREE.Vector3(
                     (Math.random() - 0.5) * 3,
                     (Math.random() - 0.5) * 3,
                     (Math.random() - 0.5) * 3
-                )
+                ),
+                life: maxLife, maxLife, initOpacity: opacity
+            };
+            scene.add(m);
+            particles.push(m);
+        }
+    }
+
+    // Particules d'impact boss : durée ultra-courte, restent proches du point d'impact
+    function spawnBossHitParticles(pos, c, count = 6) {
+        const finalCount = isMobile ? Math.ceil(count / 2) : count;
+        for (let i = 0; i < finalCount; i++) {
+            const mat = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 1.0 });
+            const m = new THREE.Mesh(SHARED_PARTICLE_GEO, mat);
+            m.position.copy(pos);
+            const maxLife = 10;
+            m.userData = {
+                vel: new THREE.Vector3(
+                    (Math.random() - 0.5) * 7,   // fort étalement X
+                    (Math.random() - 0.5) * 7,   // fort étalement Y
+                    -(0.5 + Math.random() * 1.5) // Z légèrement négatif = s'éloigne vers le boss
+                ),
+                life: maxLife, maxLife, initOpacity: 1.0
             };
             scene.add(m);
             particles.push(m);
@@ -2085,7 +2651,13 @@
         // Inherit the plane's forward direction
         const dir = new THREE.Vector3(0, 0, -1);
         dir.applyQuaternion(plane.quaternion);
-        bullet.userData = { vel: dir.normalize().multiplyScalar(LASER_BULLET_SPEED) };
+        // In boss fight mode bullets must always outrun the player/boss regardless of boost.
+        // We add the current gameSpeed so the bullet's world velocity is always faster than
+        // the player's own -Z movement, guaranteeing it reaches the boss in front.
+        const bulletSpeed = gameMode === 'boss'
+            ? Math.max(LASER_BULLET_SPEED, gameSpeed + LASER_BULLET_SPEED)
+            : LASER_BULLET_SPEED;
+        bullet.userData = { vel: dir.normalize().multiplyScalar(bulletSpeed) };
         // Add a glow trail
         const glowGeo = new THREE.BoxGeometry(0.2, 0.2, 3.0);
         const glowMat = new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.3 });
@@ -2110,44 +2682,47 @@
                 continue;
             }
 
-            // Check collision with enemies (birds, balloons)
+            // Boss mode: check boss collision first
             let bulletHit = false;
-            for (let i = objects.length - 1; i >= 0; i--) {
-                const o = objects[i];
-                const t = o.userData.type;
-                if (t !== 'bird' && t !== 'balloon') continue;
-                if (o.userData.dead) continue;
-
-                const dx = Math.abs(bul.position.x - o.position.x);
-                const dy = Math.abs(bul.position.y - o.position.y);
-                const dz = Math.abs(bul.position.z - o.position.z);
-
-                if (dx < LASER_HIT_RADIUS && dy < LASER_HIT_RADIUS && dz < LASER_HIT_RADIUS) {
+            if (gameMode === 'boss' && activeBoss && !bossDefeated) {
+                if (checkBulletBossCollision(bul)) {
                     bulletHit = true;
-                    o.userData.hitCount = (o.userData.hitCount || 0) + 1;
-                    spawnParticles(bul.position, 0x00FF88, 3);
+                }
+            }
 
-                    if (o.userData.hitCount >= LASER_HITS_TO_KILL) {
-                        // Enemy destroyed by laser
-                        let pts = Math.floor((t === 'balloon' ? 1000 : 500) * currentComboMultiplier * timeMultiplier);
-                        score += pts;
-                        enemiesKilled++;
-                        triggerCombo();
-                        AudioSys.smash();
-                        spawnParticles(o.position, t === 'balloon' ? 0xFFFFFF : 0xff3333, 15);
-                        spawnFloatingText("+" + pts, o.position, "#00FF88");
+            // Check collision with enemies (birds, balloons) — in both modes
+            if (!bulletHit) {
+                for (let i = objects.length - 1; i >= 0; i--) {
+                    const o = objects[i];
+                    const t = o.userData.type;
+                    if (t !== 'bird' && t !== 'balloon') continue;
+                    if (o.userData.dead) continue;
 
-                        if (t === 'bird') {
-                            o.userData.dead = true;
+                    const dx = Math.abs(bul.position.x - o.position.x);
+                    const dy = Math.abs(bul.position.y - o.position.y);
+                    const dz = Math.abs(bul.position.z - o.position.z);
+
+                    if (dx < LASER_HIT_RADIUS && dy < LASER_HIT_RADIUS && dz < LASER_HIT_RADIUS) {
+                        bulletHit = true;
+                        o.userData.hitCount = (o.userData.hitCount || 0) + 1;
+                        spawnParticles(bul.position, 0x00FF88, 3);
+
+                        if (o.userData.hitCount >= LASER_HITS_TO_KILL) {
+                            let pts = Math.floor((t === 'balloon' ? 1000 : 500) * currentComboMultiplier * timeMultiplier);
+                            score += pts;
+                            enemiesKilled++;
+                            triggerCombo();
+                            checkComboMagReward();
+                            AudioSys.smash();
+                            spawnParticles(o.position, t === 'balloon' ? 0xFFFFFF : 0xff3333, 15);
+                            spawnFloatingText("+" + pts, o.position, "#00FF88");
+                            if (t === 'bird') { o.userData.dead = true; }
+                            else { scene.remove(o); objects.splice(i, 1); }
                         } else {
-                            scene.remove(o);
-                            objects.splice(i, 1);
+                            spawnFloatingText("HIT", bul.position, "#00FF88");
                         }
-                    } else {
-                        // Hit flash feedback
-                        spawnFloatingText("HIT", bul.position, "#00FF88");
+                        break;
                     }
-                    break;
                 }
             }
 
@@ -2156,14 +2731,20 @@
                 bullets.splice(b, 1);
             }
         }
+
+        // Auto-reload from magazine when empty
+        if (laserAmmo === 0 && laserMagazines > 0) {
+            reloadFromMagazine();
+        }
     }
 
     /* ========== GAME FLOW ========== */
     function startGame(mode) {
         controlMode = mode;
+        gameMode = 'runner';
         AudioSys.startGameMusic();
         isPlaying = true;
-        $('start-screen').classList.add('hidden');
+        document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
 
         if (controlMode === 'touch') {
             $('mobile-controls').classList.remove('hidden');
@@ -2172,8 +2753,39 @@
             if (controlMode === 'mouse') document.body.requestPointerLock();
         }
         $('ammo-display').classList.remove('hidden');
+        $('boss-hud').classList.remove('active');
         clock.start();
         resetLogic();
+    }
+
+    function startBossFight(bossIdx, mode) {
+        if (mode === undefined) {
+            // Show control selection
+            pendingBossIndex = bossIdx;
+            // Highlight selected boss visually
+            document.querySelectorAll('.boss-option').forEach((el,i) => {
+                el.style.opacity = i === bossIdx ? '1' : '0.6';
+            });
+            return;
+        }
+        controlMode = mode;
+        gameMode = 'boss';
+        pendingBossIndex = bossIdx;
+        AudioSys.startGameMusic();
+        isPlaying = true;
+        document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
+
+        if (controlMode === 'touch') {
+            $('mobile-controls').classList.remove('hidden');
+        } else {
+            $('mobile-controls').classList.add('hidden');
+            if (controlMode === 'mouse') document.body.requestPointerLock();
+        }
+        $('ammo-display').classList.remove('hidden');
+        $('boss-hud').classList.add('active');
+        clock.start();
+        resetLogic();
+        spawnBoss(bossIdx);
     }
 
     function togglePause() {
@@ -2202,6 +2814,8 @@
         $('pause-screen').classList.add('hidden');
         $('mobile-controls').classList.add('hidden');
         $('ammo-display').classList.add('hidden');
+        $('boss-hud').classList.remove('active');
+        cleanupBoss();
         AudioSys.startMenuMusic();
         resetGame();
         if (AudioSys.engineGain) AudioSys.engineGain.gain.value = 0;
@@ -2210,10 +2824,20 @@
 
     function resetGame() {
         $('game-over-screen').classList.add('hidden');
+        $('boss-victory-screen').classList.add('hidden');
         $('mobile-controls').classList.add('hidden');
         $('ammo-display').classList.add('hidden');
-        switchScreen('start-screen');
+        $('boss-hud').classList.remove('active');
+        switchScreen('mode-screen');
         AudioSys.startMenuMusic();
+    }
+
+    function cleanupBoss() {
+        if (activeBoss) { scene.remove(activeBoss); activeBoss = null; }
+        bossWeakpoints = [];
+        bossProjectiles.forEach(p => scene.remove(p)); bossProjectiles = [];
+        bossSpawnedObstacles.forEach(o => scene.remove(o)); bossSpawnedObstacles = [];
+        bossData = null; bossDefeated = false; bossCritHits = 0; bossPowerupTimer = 3;
     }
 
     function resetLogic() {
@@ -2223,7 +2847,8 @@
         const turboBox = $('turbo-toggle');
         isTurboMode = turboBox && turboBox.checked;
 
-        score = 0; distance = 0; health = 100; energy = 100;
+        applyUpgrades();
+        score = 0; distance = 0; health = upgradeMaxHealth; energy = upgradeMaxEnergy;
         invincibleTimer = 0; birdShieldTimer = 0; drillTimer = 0;
         comboCount = 0; comboTimer = 0; currentComboMultiplier = 1.0; overdriveLevel = 0;
 
@@ -2242,11 +2867,15 @@
         isBoosting = false;
         isShooting = false;
         laserAmmo = LASER_MAX_AMMO;
+        laserMagazines = 0;
         laserCooldown = 0;
+        comboMagRewardNext = 10;
 
         objects.forEach(o => scene.remove(o)); objects = [];
         particles.forEach(p => scene.remove(p)); particles = [];
         bullets.forEach(b => scene.remove(b)); bullets = [];
+
+        cleanupBoss();
 
         plane.position.set(0, 0, 0);
         plane.rotation.set(0, 0, 0);
@@ -2258,6 +2887,7 @@
 
         $('shield-overlay').style.opacity = 0;
         $('speed-overlay').style.opacity = 0;
+        updateMagazineHUD();
         updateHUD();
     }
 
@@ -2377,10 +3007,44 @@
         $('combo-mult-val').innerText = "SCORE x" + currentComboMultiplier.toFixed(1);
     }
 
+    /* ========== MAGAZINE HUD ========== */
+    function updateMagazineHUD() {
+        for (let i = 0; i < getMaxMags(); i++) {
+            const el = $('mag-' + i);
+            if (!el) continue;
+            el.classList.toggle('full', i < laserMagazines);
+        }
+        const reloadNotice = $('reload-notice');
+        if (reloadNotice) reloadNotice.classList.toggle('visible', laserAmmo === 0 && laserMagazines > 0);
+    }
+
+    function reloadFromMagazine() {
+        if (laserMagazines <= 0) return false;
+        laserMagazines--;
+        laserAmmo = LASER_MAX_AMMO;
+        AudioSys.play(400, 'square', 0.12, 0.2);
+        spawnFloatingText("RELOAD!", plane.position, "#00FF88");
+        updateMagazineHUD();
+        return true;
+    }
+
+    /* ========== COMBO MAGAZINE REWARD ========== */
+    let comboMagRewardNext = 10; // next combo threshold for magazine reward
+    function checkComboMagReward() {
+        // From combo 10+, every 5 extra kills/hits => +1 mag (max 3)
+        if (comboCount >= comboMagRewardNext && laserMagazines < getMaxMags()) {
+            laserMagazines = Math.min(getMaxMags(), laserMagazines + 1);
+            comboMagRewardNext += 5;
+            AudioSys.play(700, 'square', 0.15, 0.25);
+            spawnFloatingText("+1 MAG!", plane.position, "#00FF88");
+            updateMagazineHUD();
+        }
+    }
+
     /* ========== HUD ========== */
     function updateHUD() {
         $('score-display').innerText = score;
-        $('dist-display').innerText = Math.floor(distance) + " m";
+        $('dist-display').innerText = gameMode === 'boss' ? Math.floor(score) + ' PTS' : Math.floor(distance) + " m";
         $('health-fill').style.width = health + "%";
         $('energy-fill').style.width = energy + "%";
 
@@ -2423,6 +3087,750 @@
                 shootBtnAmmo.className = isEmpty ? 'btn-ammo empty' : 'btn-ammo';
             }
         }
+
+        // Boss HUD
+        if (gameMode === 'boss' && bossData) {
+            const pct = Math.max(0, bossData.hp / bossData.maxHp * 100);
+            $('boss-hp-fill').style.width = pct + '%';
+            $('boss-hp-text').innerText = Math.ceil(bossData.hp) + ' / ' + bossData.maxHp;
+            $('boss-phase-display').innerText = 'PHASE ' + (bossData.phase + 1) + ' / ' + bossData.phases;
+            const isInvuln = bossData.fullyInvuln || (bossData.phaseInvuln && bossWeakpoints.every(wp => !wp.userData.wpActive));
+            $('boss-invuln-notice').classList.toggle('visible', isInvuln);
+        }
+    }
+
+    /* ========== WEAKPOINT HELPER ========== */
+    function createWeakpoint(size, color, x, y, z) {
+        const geo = new THREE.BoxGeometry(size, size, size);
+        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, wireframe: false });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, y, z);
+        // Glow ring
+        const ringGeo = new THREE.BoxGeometry(size * 1.6, size * 1.6, size * 1.6);
+        const ringMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.4, wireframe: true });
+        mesh.add(new THREE.Mesh(ringGeo, ringMat));
+        mesh.userData.wpActive = false;
+        mesh.userData.wpColor = color;
+        mesh.userData.isWeakpoint = true;
+        mesh.visible = false;
+        return mesh;
+    }
+
+    function setWeakpointActive(mesh, active) {
+        mesh.userData.wpActive = active;
+        mesh.visible = active;
+    }
+
+    /* ========== BOSS SPAWN ========== */
+    function spawnBoss(idx) {
+        cleanupBoss();
+        const def = BOSS_DEFS[idx];
+        bossData = {
+            idx, phase: 0, phases: def.phases,
+            hp: def.maxHp, maxHp: def.maxHp,
+            hpPerPhase: def.hpPerPhase,
+            phaseHpThresholds: [], // computed below
+            phaseInvuln: false, fullyInvuln: false,
+            attackTimer: 0, attackCooldown: 150,
+            moveTimer: 0, baseX: 0, baseY: 8,
+            name: def.name
+        };
+        // Phase thresholds: phase N ends when hp drops below sum of phases after
+        let cumulative = def.maxHp;
+        for (let i = 0; i < def.phases; i++) {
+            cumulative -= def.hpPerPhase[i];
+            bossData.phaseHpThresholds.push(cumulative);
+        }
+
+        $('boss-name-display').innerText = def.name;
+
+        if (idx === 0) activeBoss = buildBirdKing();
+        else if (idx === 1) activeBoss = buildNyanCat();
+        else activeBoss = buildMothership();
+
+        // Position boss far ahead
+        activeBoss.position.set(0, 8, plane.position.z - 180);
+        scene.add(activeBoss);
+        triggerPhase(0);
+    }
+
+    /* ========== BOSS 1 : THE BIRD KING ========== */
+    function buildBirdKing() {
+        const g = new THREE.Group();
+        // Body — fat goéland (white/grey)
+        g.add(createVoxelBox(5, 4, 6, 0xEEEEEE, 0, 0, 0));          // torso
+        g.add(createVoxelBox(4, 3, 4, 0xDDDDDD, 0, 1, -3));         // neck area
+        // Head
+        const head = new THREE.Group();
+        head.add(createVoxelBox(4, 4, 4, 0xEEEEEE, 0, 0, 0));       // head
+        head.add(createVoxelBox(2.5, 1.2, 2, 0xFFCC00, 0, -0.8, -2.5)); // beak
+        head.add(createVoxelBox(0.6, 0.6, 0.6, 0x111111, 0.9, 0.4, -1.8, true)); // left eye
+        head.add(createVoxelBox(0.6, 0.6, 0.6, 0x111111, -0.9, 0.4, -1.8, true)); // right eye
+        // Crown
+        head.add(createVoxelBox(4.4, 0.6, 0.6, 0xFFD700, 0, 2.2, 0));   // crown base
+        head.add(createVoxelBox(0.8, 1.8, 0.8, 0xFFD700, -1.5, 2.8, 0));// crown spike L
+        head.add(createVoxelBox(0.8, 2.4, 0.8, 0xFFD700, 0, 3.2, 0));   // crown spike mid
+        head.add(createVoxelBox(0.8, 1.8, 0.8, 0xFFD700, 1.5, 2.8, 0)); // crown spike R
+        head.add(createVoxelBox(0.5, 0.5, 0.5, 0xFF0000, 0, 3.8, 0, true)); // crown gem
+        head.position.set(0, 3, -3.5);
+        g.add(head);
+        g.userData.head = head;
+
+        // Cape (red, behind body)
+        g.add(createVoxelBox(6, 5, 0.5, 0xCC0000, 0, 0, 3));
+        g.add(createVoxelBox(5, 3, 0.5, 0xAA0000, 0, -2, 3.5));
+
+        // Wings
+        const wingL = new THREE.Group();
+        wingL.add(createVoxelBox(6, 1, 4, 0xDDDDDD, -3, 0, 0));
+        wingL.add(createVoxelBox(4, 0.8, 3, 0xCCCCCC, -7, 0.2, 0.5));
+        wingL.add(createVoxelBox(2.5, 0.6, 2, 0xEEEEEE, -10, 0.3, 0.8));
+        wingL.position.set(-2.5, 1, 0);
+        g.add(wingL); g.userData.wingL = wingL;
+
+        const wingR = new THREE.Group();
+        wingR.add(createVoxelBox(6, 1, 4, 0xDDDDDD, 3, 0, 0));
+        wingR.add(createVoxelBox(4, 0.8, 3, 0xCCCCCC, 7, 0.2, 0.5));
+        wingR.add(createVoxelBox(2.5, 0.6, 2, 0xEEEEEE, 10, 0.3, 0.8));
+        wingR.position.set(2.5, 1, 0);
+        g.add(wingR); g.userData.wingR = wingR;
+
+        // Sceptre (right side)
+        const sceptre = new THREE.Group();
+        sceptre.add(createVoxelBox(0.6, 10, 0.6, 0xFFD700, 0, 0, 0));   // shaft
+        sceptre.add(createVoxelBox(2.5, 2.5, 2.5, 0xFFAA00, 0, 5.5, 0)); // orb base
+        sceptre.add(createVoxelBox(1.8, 1.8, 1.8, 0xFF6600, 0, 5.5, 0, true)); // glowing orb
+        sceptre.position.set(7, -1, -1);
+        g.add(sceptre); g.userData.sceptre = sceptre;
+
+        // Feet
+        g.add(createVoxelBox(2, 1, 1.5, 0xFFCC00, -1.5, -2.5, 0));
+        g.add(createVoxelBox(2, 1, 1.5, 0xFFCC00, 1.5, -2.5, 0));
+
+        // Glow outline
+        const glowGeo = new THREE.BoxGeometry(18, 12, 10);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xFFD700, transparent: true, opacity: 0.12, wireframe: true });
+        g.add(new THREE.Mesh(glowGeo, glowMat));
+
+        // Weakpoints
+        const wpCrown = createWeakpoint(2.2, 0xFFFF00, 0, 7.5, -3.5);
+        const wpOrb   = createWeakpoint(2.0, 0xFF6600, 7, 4.5, -1);
+        const wpChest = createWeakpoint(2.5, 0xFF0055, 0, 0, -3.5);
+        g.add(wpCrown, wpOrb, wpChest);
+        bossWeakpoints = [wpCrown, wpOrb, wpChest];
+
+        g.rotation.y = Math.PI; // face player
+        g.scale.set(1.4, 1.4, 1.4);
+        return g;
+    }
+
+    /* ========== BOSS 2 : NYAN CAT ========== */
+    function buildNyanCat() {
+        const g = new THREE.Group();
+        // Pop-tart body
+        g.add(createVoxelBox(10, 7, 3, 0xD4956A, 0, 0, 0));    // pastry base
+        g.add(createVoxelBox(9, 6, 0.5, 0xFF69B4, 0, 0, -1.8, false, 0.9)); // pink frosting
+        // Frosting sprinkles
+        const sprinkles = [[0xFF0000,2,1],[0x00FF00,-2,1.5],[0x0000FF,3,-1],[0xFFFF00,-3,-0.5],[0xFF00FF,0,2]];
+        sprinkles.forEach(([c,x,y]) => g.add(createVoxelBox(0.8, 0.3, 0.3, c, x, y, -2.1, true)));
+
+        // Cat head
+        const catHead = new THREE.Group();
+        catHead.add(createVoxelBox(5, 5, 4, 0x888888, 0, 0, 0));      // head
+        catHead.add(createVoxelBox(1.5, 2, 1, 0x888888, -2, 2.8, 0)); // ear L
+        catHead.add(createVoxelBox(1.5, 2, 1, 0x888888, 2, 2.8, 0));  // ear R
+        catHead.add(createVoxelBox(0.8, 0.8, 0.8, 0x00FF88, -1.2, 0.5, -2.1, true)); // eye L
+        catHead.add(createVoxelBox(0.8, 0.8, 0.8, 0x00FF88, 1.2, 0.5, -2.1, true));  // eye R
+        catHead.add(createVoxelBox(1.8, 0.4, 0.4, 0xFF69B4, 0, -0.5, -2.1));         // mouth
+        // Whiskers
+        catHead.add(createVoxelBox(3, 0.2, 0.2, 0xFFFFFF, -3.5, 0, -2));
+        catHead.add(createVoxelBox(3, 0.2, 0.2, 0xFFFFFF, 3.5, 0, -2));
+        catHead.position.set(-7.5, 0.5, 0);
+        g.add(catHead); g.userData.catHead = catHead;
+
+        // Tail (right side, curved via multiple segments)
+        const tail = new THREE.Group();
+        tail.add(createVoxelBox(1, 6, 1, 0x888888, 0, 0, 0));
+        tail.add(createVoxelBox(1, 3, 1, 0x888888, 1.5, 3, 0));
+        tail.add(createVoxelBox(1, 2, 1, 0x888888, 3, 4.5, 0));
+        tail.position.set(5.5, -1, 0);
+        g.add(tail); g.userData.tail = tail;
+
+        // Rainbow trail (behind — 7 stripes)
+        const rbColors = [0xFF0000, 0xFF8800, 0xFFFF00, 0x00FF00, 0x0088FF, 0x8800FF, 0xFF00FF];
+        const rbTrail = new THREE.Group();
+        rbColors.forEach((c, i) => {
+            for (let seg = 0; seg < 8; seg++) {
+                rbTrail.add(createVoxelBox(0.8, 0.8, 1.5, c, 0, i * 1.0 - 3, seg * 2.5 + 3, true, 0.7 - seg * 0.07));
+            }
+        });
+        g.add(rbTrail); g.userData.rbTrail = rbTrail;
+
+        // Legs (4)
+        [[-3,-1],[-1,-1],[1,-1],[3,-1]].forEach(([x]) => {
+            g.add(createVoxelBox(1.2, 2.5, 1.2, 0x888888, x, -4.5, 0));
+            g.add(createVoxelBox(1.5, 0.8, 1.5, 0x888888, x, -5.8, 0));
+        });
+
+        // Glow
+        const glowGeo = new THREE.BoxGeometry(22, 12, 8);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xFF69B4, transparent: true, opacity: 0.1, wireframe: true });
+        g.add(new THREE.Mesh(glowGeo, glowMat));
+
+        // Weakpoints
+        const wpHead  = createWeakpoint(2.5, 0x00FFFF, -7.5, 2, -2.5);
+        const wpTart  = createWeakpoint(3.0, 0xFF69B4,  0, 0, -2.5);
+        const wpTail  = createWeakpoint(2.0, 0xFF00FF,  7, 2, 0);
+        g.add(wpHead, wpTart, wpTail);
+        bossWeakpoints = [wpHead, wpTart, wpTail];
+
+        g.rotation.y = Math.PI;
+        g.scale.set(1.3, 1.3, 1.3);
+        return g;
+    }
+
+    /* ========== BOSS 3 : VAISSEAU-MÈRE ========== */
+    function buildMothership() {
+        const g = new THREE.Group();
+        // Main hull — massive saucer
+        g.add(createVoxelBox(28, 4, 28, 0x1a1a2e, 0, 0, 0));        // main disc
+        g.add(createVoxelBox(20, 6, 20, 0x16213e, 0, 3, 0));         // upper dome base
+        g.add(createVoxelBox(14, 5, 14, 0x0f3460, 0, 6.5, 0));       // dome mid
+        g.add(createVoxelBox(8, 4, 8, 0x533483, 0, 9.5, 0));         // dome top
+        g.add(createVoxelBox(4, 3, 4, 0x00FFCC, 0, 12, 0, true));    // command center glow
+
+        // Engine pods (4 corners)
+        [[-10,0,-10],[10,0,-10],[-10,0,10],[10,0,10]].forEach(([x,y,z]) => {
+            g.add(createVoxelBox(4, 3, 4, 0x222244, x, y, z));
+            g.add(createVoxelBox(2.5, 2, 2.5, 0x4400FF, x, y-2, z, true, 0.8));
+        });
+
+        // Side cannons
+        [[-14,0,0],[14,0,0]].forEach(([x,y,z]) => {
+            g.add(createVoxelBox(6, 2, 2, 0x333355, x, y, z));
+            g.add(createVoxelBox(1.5, 1.5, 1.5, 0xFF0044, x > 0 ? x+3.5 : x-3.5, y, z, true));
+        });
+
+        // Bottom — tractor beam emitter ring
+        const emitter = new THREE.Group();
+        emitter.add(createVoxelBox(12, 1, 12, 0x333366, 0, 0, 0));
+        emitter.add(createVoxelBox(8, 1.5, 8, 0x555599, 0, -1, 0));
+        emitter.add(createVoxelBox(4, 2, 4, 0x00AAFF, 0, -2, 0, true));
+        emitter.position.set(0, -3, 0);
+        g.add(emitter); g.userData.emitter = emitter;
+
+        // Landing legs (retracted by default)
+        const legs = new THREE.Group();
+        [[-8,0,-8],[8,0,-8],[-8,0,8],[8,0,8]].forEach(([x,y,z]) => {
+            legs.add(createVoxelBox(1, 5, 1, 0x444466, x, -4, z));
+        });
+        legs.visible = false;
+        g.add(legs); g.userData.legs = legs;
+
+        // Glow
+        const glowGeo = new THREE.BoxGeometry(34, 16, 34);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0x4400FF, transparent: true, opacity: 0.08, wireframe: true });
+        g.add(new THREE.Mesh(glowGeo, glowMat));
+
+        // Weakpoints (5 for 5 phases)
+        const wpCore    = createWeakpoint(3.0, 0x00FFCC, 0, 12, 0);     // command center
+        const wpEngineL = createWeakpoint(2.5, 0xFF4400, -14, 0, 0);    // left cannon
+        const wpEngineR = createWeakpoint(2.5, 0xFF4400, 14, 0, 0);     // right cannon
+        const wpBeam    = createWeakpoint(2.5, 0x00AAFF, 0, -5, 0);     // tractor beam
+        const wpDome    = createWeakpoint(3.5, 0xFF00FF, 0, 9.5, 0);    // dome shield
+        g.add(wpCore, wpEngineL, wpEngineR, wpBeam, wpDome);
+        bossWeakpoints = [wpCore, wpEngineL, wpEngineR, wpBeam, wpDome];
+
+        g.rotation.y = Math.PI;
+        g.scale.set(1.0, 1.0, 1.0);
+        return g;
+    }
+
+    /* ========== BOSS PHASE TRIGGER ========== */
+    function triggerPhase(phase) {
+        if (!bossData) return;
+        bossData.phase = phase;
+        bossData.phaseInvuln = false;
+        bossData.fullyInvuln = false;
+        bossWeakpoints.forEach(wp => setWeakpointActive(wp, false));
+
+        // Phase flash
+        const pf = $('phase-flash');
+        pf.style.opacity = 1;
+        setTimeout(() => pf.style.opacity = 0, 200);
+
+        AudioSys.play(150, 'sawtooth', 0.5, 0.4);
+
+        const idx = bossData.idx;
+        if (idx === 0) triggerBirdKingPhase(phase);
+        else if (idx === 1) triggerNyanCatPhase(phase);
+        else triggerMothershipPhase(phase);
+
+        updateHUD();
+    }
+
+    function triggerBirdKingPhase(phase) {
+        // Phase 0: normal, sceptre WP active
+        // Phase 1: invuln body, only crown WP active
+        // Phase 2: fully invuln until all 3 WPs hit simultaneously => short window
+        bossData.attackCooldown = [240, 175, 120][phase];
+        if (phase === 0) {
+            setWeakpointActive(bossWeakpoints[1], true); // orb
+        } else if (phase === 1) {
+            bossData.phaseInvuln = true;
+            setWeakpointActive(bossWeakpoints[0], true); // crown
+            spawnFloatingText("TOUCHEZ LA COURONNE!", activeBoss.position, "#FFFF00");
+        } else if (phase === 2) {
+            bossData.phaseInvuln = true;
+            // All 3 WPs active — must hit chest for full damage
+            bossWeakpoints.forEach(wp => setWeakpointActive(wp, true));
+            setWeakpointActive(bossWeakpoints[2], true); // chest
+            spawnFloatingText("VISEZ LA POITRINE!", activeBoss.position, "#FF0055");
+        }
+    }
+
+    function triggerNyanCatPhase(phase) {
+        bossData.attackCooldown = [130, 90, 60][phase];
+        if (phase === 0) {
+            setWeakpointActive(bossWeakpoints[1], true); // poptart
+        } else if (phase === 1) {
+            bossData.phaseInvuln = true;
+            setWeakpointActive(bossWeakpoints[0], true); // head
+            spawnFloatingText("TOUCHEZ LA TÊTE!", activeBoss.position, "#00FFFF");
+        } else if (phase === 2) {
+            bossData.phaseInvuln = true;
+            bossWeakpoints.forEach(wp => setWeakpointActive(wp, true));
+            spawnFloatingText("TOUS LES POINTS FAIBLES!", activeBoss.position, "#FF69B4");
+        }
+    }
+
+    function triggerMothershipPhase(phase) {
+        bossData.attackCooldown = [160, 130, 100, 80, 55][phase];
+        // Each phase has its own weakpoint
+        if (phase < bossWeakpoints.length) {
+            setWeakpointActive(bossWeakpoints[phase], true);
+        }
+        const msgs = ["DÉTRUISEZ LE NOYAU!", "CANON GAUCHE!", "CANON DROIT!", "FAISCEAU TRACTEUR!", "DÔME CENTRAL!"];
+        spawnFloatingText(msgs[phase] || "", activeBoss.position, "#00FFCC");
+        if (phase >= 2) bossData.phaseInvuln = true;
+    }
+
+    /* ========== BOSS DAMAGE ========== */
+    function damageBoss(amount, isWeakpoint, isCrit) {
+        if (!bossData || bossDefeated) return;
+
+        // Invulnerability check
+        if (bossData.fullyInvuln) return;
+        if (bossData.phaseInvuln && !isWeakpoint) return; // blocked
+        if (bossInvulnTimer > 0) return;
+
+        const actualDmg = isCrit ? amount * 2.5 : amount;
+        bossData.hp = Math.max(0, bossData.hp - actualDmg);
+
+        // Combo: hitting boss counts as a hit
+        triggerCombo();
+        checkComboMagReward();
+
+        if (isCrit) {
+            bossCritHits++;
+            const co = $('crit-overlay');
+            co.style.opacity = 1;
+            setTimeout(() => co.style.opacity = 0, 150);
+            spawnFloatingText("CRITIQUE! +" + Math.floor(actualDmg), activeBoss.position, "#FFFF00");
+            AudioSys.play(800, 'square', 0.1, 0.3);
+        } else {
+            spawnFloatingText("-" + Math.floor(actualDmg), activeBoss.position, "#FF4400");
+        }
+
+        // Invuln flash
+        bossInvulnTimer = 3;
+
+        // Check phase transition
+        const threshold = bossData.phaseHpThresholds[bossData.phase];
+        if (bossData.hp <= threshold && bossData.phase < bossData.phases - 1) {
+            bossData.phase++;
+            triggerPhase(bossData.phase);
+        }
+
+        // Check death
+        if (bossData.hp <= 0) {
+            defeatBoss();
+        }
+        updateHUD();
+    }
+
+    /* ========== BOSS DEFEAT ========== */
+    function defeatBoss() {
+        bossDefeated = true;
+        isPlaying = false;
+        AudioSys.play(300, 'square', 1.5, 0.4);
+        spawnParticles(activeBoss.position, 0xFFD700, 40);
+        spawnParticles(activeBoss.position, 0xFF4400, 30);
+
+        const df = $('boss-defeat-overlay');
+        df.style.opacity = 1;
+        setTimeout(() => { df.style.opacity = 0; }, 600);
+
+        // Bonus: score from combo
+        const timeMultiplier = 1 + bossData.phase * 0.5;
+        const bossBonus = Math.floor(5000 * currentComboMultiplier * timeMultiplier);
+        score += bossBonus;
+
+        // Sauvegarder victoire + récompense crédits
+        const bossIdx = bossData.idx;
+        const coinsReward = [500, 1200, 2500][bossIdx];
+        const isFirstVictory = !getBossVictories().includes(bossIdx);
+        saveBossVictory(bossIdx);
+        addCoins(coinsReward);
+
+        setTimeout(() => {
+            document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
+            $('boss-final-score').innerText = score + ' PTS';
+            $('boss-final-hits').innerText = bossCritHits + ' touches critiques';
+
+            // Afficher la récompense en crédits
+            $('boss-coins-earned').innerText = '+' + coinsReward.toLocaleString() + ' 🪙 crédits';
+            $('boss-coins-earned').style.display = 'block';
+
+            // Skin débloqué (première victoire uniquement)
+            const skinUnlockEl = $('boss-skin-unlock');
+            if (isFirstVictory) {
+                const skinNames = ["PLUMES ROYALES", "NYAN SPECTER", "VAISSEAU-X"];
+                skinUnlockEl.innerText = '🎨 SKIN DÉBLOQUÉ : ' + skinNames[bossIdx] + ' !';
+                skinUnlockEl.style.display = 'block';
+            } else {
+                skinUnlockEl.style.display = 'none';
+            }
+
+            $('boss-victory-screen').classList.remove('hidden');
+            if (AudioSys.bgMusic) AudioSys.bgMusic.pause();
+
+            // Leaderboard
+            const lbEl = $('lb-boss-end');
+            if (lbEl) {
+                const scores = getScores();
+                while (scores.length < 5) scores.push({ name:"---", score:0, dist:0 });
+                lbEl.innerHTML = scores.map((v,i) =>
+                    `<div class="score-entry"><span>#${i+1} ${v.name}</span><span>${v.score}</span></div>`
+                ).join('');
+            }
+            if (isHighScore(score)) {
+                $('boss-highscore-form').classList.remove('hidden');
+                $('boss-player-name').value = "";
+                setTimeout(() => $('boss-player-name').focus(), 100);
+            } else {
+                $('boss-highscore-form').classList.add('hidden');
+            }
+        }, 800);
+    }
+
+    function submitBossHighScore() {
+        let name = $('boss-player-name').value;
+        if (!name || name.trim() === "") name = "PILOTE";
+        saveScore(name, score, bossData ? bossData.phase : 0);
+        updateLeaderboardUI();
+        $('boss-highscore-form').classList.add('hidden');
+    }
+
+    /* ========== BOSS ATTACKS ========== */
+    function bossAttack() {
+        if (!bossData || !activeBoss || bossDefeated) return;
+        const idx = bossData.idx;
+        const phase = bossData.phase;
+        if (idx === 0) birdKingAttack(phase);
+        else if (idx === 1) nyanCatAttack(phase);
+        else mothershipAttack(phase);
+    }
+
+    function spawnBossProjectile(px, py, pz, tx, ty, tz, speed, color, dmg, size=1) {
+        const geo = new THREE.BoxGeometry(size, size, size * 2);
+        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 });
+        const proj = new THREE.Mesh(geo, mat);
+        proj.position.set(px, py, pz);
+        const dir = new THREE.Vector3(tx-px, ty-py, tz-pz).normalize();
+        proj.userData = { vel: dir.multiplyScalar(speed), dmg, life: 300 };
+        // Glow
+        const gGeo = new THREE.BoxGeometry(size*2, size*2, size*3);
+        const gMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.25, wireframe: true });
+        proj.add(new THREE.Mesh(gGeo, gMat));
+        scene.add(proj);
+        bossProjectiles.push(proj);
+    }
+
+    function birdKingAttack(phase) {
+        if (!activeBoss) return;
+        const bp = activeBoss.position;
+        const pp = plane.position;
+
+        if (phase === 0) {
+            // Summon 1-2 birds via sceptre animation
+            for (let i = 0; i < 1 + phase; i++) {
+                const birdObj = new THREE.Group();
+                // Mini bird (reuse bird builder)
+                const body = new THREE.Group();
+                body.add(createVoxelBox(1.8, 1.2, 2.5, 0xFF4444, 0, 0, 0));
+                body.add(createVoxelBox(1, 1, 1.2, 0xFF4444, 0, 0.4, -1.8));
+                const wL = new THREE.Group();
+                wL.add(createVoxelBox(3, 0.3, 1.8, 0xFF8800, -1.5, 0, 0));
+                wL.position.set(-0.8, 0.4, 0);
+                const wR = new THREE.Group();
+                wR.add(createVoxelBox(3, 0.3, 1.8, 0xFF8800, 1.5, 0, 0));
+                wR.position.set(0.8, 0.4, 0);
+                birdObj.add(body, wL, wR);
+                birdObj.rotation.y = Math.PI;
+                birdObj.userData = { type: 'bird', dead: false, hitCount: 0, wings: [wL, wR],
+                    isMoving: true, phase: Math.random() * Math.PI,
+                    baseRelativeX: (Math.random()-0.5)*40, relativeX: 0 };
+                birdObj.position.set(bp.x + (Math.random()-0.5)*15, bp.y + (Math.random()-0.5)*4, bp.z + 20);
+                scene.add(birdObj); objects.push(birdObj);
+                bossSpawnedObstacles.push(birdObj);
+            }
+        } else if (phase === 1) {
+            // Feather volley — 3 projectiles in spread (réduit de 5 → 3)
+            for (let i = -1; i <= 1; i++) {
+                spawnBossProjectile(bp.x + i*4, bp.y, bp.z + 5,
+                    pp.x + i*3, pp.y, pp.z, 0.16, 0xFFFFFF, 10, 0.8);
+            }
+        } else if (phase === 2) {
+            // Spawn birds AND feather volley
+            for (let i = 0; i < 3; i++) {
+                const angle = (i / 3) * Math.PI * 2;
+                spawnBossProjectile(bp.x + Math.cos(angle)*8, bp.y + Math.sin(angle)*4, bp.z + 5,
+                    pp.x, pp.y, pp.z, 0.20, 0xFFD700, 14, 1);
+            }
+            // Spawn 3 birds
+            for (let i = 0; i < 3; i++) {
+                const xOff = (i - 1) * 15;
+                const miniB = new THREE.Group();
+                miniB.add(createVoxelBox(1.8, 1.2, 2.5, 0xFF4444, 0, 0, 0));
+                miniB.rotation.y = Math.PI;
+                miniB.userData = { type:'bird', dead:false, hitCount:0, wings:[], isMoving:true,
+                    phase:Math.random()*Math.PI, baseRelativeX: xOff, relativeX: xOff };
+                miniB.position.set(bp.x + xOff, bp.y + 2, bp.z + 15);
+                scene.add(miniB); objects.push(miniB); bossSpawnedObstacles.push(miniB);
+            }
+        }
+    }
+
+    function nyanCatAttack(phase) {
+        if (!activeBoss) return;
+        const bp = activeBoss.position;
+        const pp = plane.position;
+
+        if (phase === 0) {
+            // Rainbow beam — single aimed shot
+            spawnBossProjectile(bp.x, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.45, 0xFF69B4, 30, 1.5);
+        } else if (phase === 1) {
+            // Spread rainbow rays
+            const rbCols = [0xFF0000, 0xFF8800, 0xFFFF00, 0x00FF00, 0x0088FF, 0xFF00FF, 0xFF69B4];
+            for (let i = 0; i < rbCols.length; i++) {
+                const spread = (i - 3) * 3;
+                spawnBossProjectile(bp.x, bp.y + spread*0.3, bp.z + 5,
+                    pp.x + spread, pp.y, pp.z, 0.4, rbCols[i], 25, 1.2);
+            }
+        } else if (phase === 2) {
+            // Spiral rainbow barrage
+            const rbCols2 = [0xFF0000,0xFF8800,0xFFFF00,0x00FF00,0x0088FF,0xFF00FF];
+            for (let i = 0; i < rbCols2.length; i++) {
+                const angle = (i / rbCols2.length) * Math.PI * 2 + (frameCount * 0.05);
+                const sx = bp.x + Math.cos(angle) * 6;
+                const sy = bp.y + Math.sin(angle) * 4;
+                spawnBossProjectile(sx, sy, bp.z + 5, pp.x, pp.y, pp.z, 0.5, rbCols2[i], 30, 1.3);
+            }
+            // Also spawn a balloon for combo refill
+            if (Math.random() < 0.4) {
+                const balloon = new THREE.Group();
+                balloon.add(createVoxelBox(4, 4, 4, 0xFF2200, 0, 3, 0));
+                balloon.add(createVoxelBox(2, 1.5, 2, 0x333333, 0, -1.5, 0));
+                balloon.userData = { type:'balloon', hitCount:0, baseScale:1,
+                    relativeX: (Math.random()-0.5)*30, baseRelativeX: 0 };
+                balloon.position.set(bp.x + (Math.random()-0.5)*20, bp.y + 8, bp.z + 25);
+                scene.add(balloon); objects.push(balloon); bossSpawnedObstacles.push(balloon);
+            }
+        }
+    }
+
+    function mothershipAttack(phase) {
+        if (!activeBoss) return;
+        const bp = activeBoss.position;
+        const pp = plane.position;
+
+        if (phase === 0) {
+            // Twin lasers from side cannons
+            spawnBossProjectile(bp.x - 14, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0xFF0044, 35, 1.5);
+            spawnBossProjectile(bp.x + 14, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0xFF0044, 35, 1.5);
+        } else if (phase === 1) {
+            // Deploy alien laser unit (like infinite runner)
+            const alienU = createAlienLaserUnit();
+            alienU.userData = { type:'alien_laser', baseScale:1, relativeX: (Math.random()-0.5)*40 };
+            alienU.position.set(pp.x + (Math.random()-0.5)*30, 50, pp.z - 80);
+            scene.add(alienU); objects.push(alienU); bossSpawnedObstacles.push(alienU);
+            // Also laser burst
+            for (let i = -1; i <= 1; i++) {
+                spawnBossProjectile(bp.x + i*8, bp.y, bp.z + 5, pp.x + i*5, pp.y, pp.z, 0.55, 0x00FF44, 30, 1.2);
+            }
+        } else if (phase === 2) {
+            // Tractor beam + drone wave: spawn 2 balloons close to player
+            for (let i = 0; i < 2; i++) {
+                const balloon = new THREE.Group();
+                balloon.add(createVoxelBox(4, 4, 4, 0x440088, 0, 3, 0));
+                balloon.add(createVoxelBox(2, 1.5, 2, 0x222233, 0, -1.5, 0));
+                balloon.userData = { type:'balloon', hitCount:0, baseScale:1,
+                    relativeX: (i === 0 ? -15 : 15), baseRelativeX: 0 };
+                balloon.position.set(pp.x + (i===0?-15:15), pp.y + 5, pp.z - 60);
+                scene.add(balloon); objects.push(balloon); bossSpawnedObstacles.push(balloon);
+            }
+            // Laser cross
+            for (let i = -2; i <= 2; i++) {
+                if (i === 0) continue;
+                spawnBossProjectile(bp.x, bp.y + i*3, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0x4400FF, 35, 1.3);
+            }
+        } else if (phase === 3) {
+            // Drone swarm (alien laser units) + fast lasers
+            const alienU2 = createAlienLaserUnit();
+            alienU2.userData = { type:'alien_laser', baseScale:1, relativeX: (Math.random()-0.5)*30 };
+            alienU2.position.set(pp.x + (Math.random()-0.5)*20, 50, pp.z - 70);
+            scene.add(alienU2); objects.push(alienU2); bossSpawnedObstacles.push(alienU2);
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                spawnBossProjectile(bp.x + Math.cos(angle)*12, bp.y + Math.sin(angle)*6, bp.z+5,
+                    pp.x, pp.y, pp.z, 0.6, 0xFF0044, 40, 1.4);
+            }
+        } else if (phase === 4) {
+            // Omega barrage: 8 lasers + 2 aliens + bridge
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2 + frameCount * 0.03;
+                spawnBossProjectile(bp.x + Math.cos(angle)*10, bp.y + Math.sin(angle)*6, bp.z+5,
+                    pp.x, pp.y, pp.z, 0.65, i%2===0 ? 0xFF0044 : 0x00FF88, 45, 1.5);
+            }
+            if (Math.random() < 0.3) {
+                const bridge = createBridge();
+                bridge.userData = { type:'bridge', baseScale:1, relativeX:0 };
+                bridge.position.set(getTrackOffset(pp.z - 100), 5, pp.z - 100);
+                scene.add(bridge); objects.push(bridge); bossSpawnedObstacles.push(bridge);
+            }
+        }
+    }
+
+    /* ========== BOSS UPDATE ========== */
+    function updateBoss(fpsFactor) {
+        if (!activeBoss || !bossData || bossDefeated) return;
+
+        // Boss stays locked at a fixed distance ahead of the player regardless of speed/boost.
+        // Z is set directly (no lerp) so no boost can make the player pass through the boss.
+        activeBoss.position.z = plane.position.z - 160;
+
+        // Lateral movement — sinusoidal per phase
+        const amp = [8, 14, 20, 22, 25][Math.min(bossData.phase, 4)];
+        const freq = [0.008, 0.012, 0.016, 0.02, 0.025][Math.min(bossData.phase, 4)];
+        activeBoss.position.x = Math.sin(frameCount * freq) * amp + getTrackOffset(activeBoss.position.z);
+
+        // Vertical bob
+        activeBoss.position.y = bossData.baseY + Math.sin(frameCount * 0.02) * 3;
+
+        // Wing flap (Bird King)
+        if (bossData.idx === 0 && activeBoss.userData.wingL) {
+            activeBoss.userData.wingL.rotation.z = -Math.sin(frameCount * 0.3) * 0.5;
+            activeBoss.userData.wingR.rotation.z =  Math.sin(frameCount * 0.3) * 0.5;
+            // Sceptre glow pulse
+            if (activeBoss.userData.sceptre) {
+                activeBoss.userData.sceptre.rotation.z = Math.sin(frameCount * 0.05) * 0.2;
+            }
+        }
+
+        // Nyan Cat — trail shimmer, tail wave, cat head bob
+        if (bossData.idx === 1) {
+            if (activeBoss.userData.tail) {
+                activeBoss.userData.tail.rotation.z = Math.sin(frameCount * 0.15) * 0.4;
+            }
+            if (activeBoss.userData.catHead) {
+                activeBoss.userData.catHead.position.y = 0.5 + Math.sin(frameCount * 0.1) * 0.5;
+            }
+        }
+
+        // Mothership — emitter spin
+        if (bossData.idx === 2 && activeBoss.userData.emitter) {
+            activeBoss.userData.emitter.rotation.y += 0.03 * fpsFactor;
+        }
+
+        // Weakpoint pulse animation (CSS done in 3D via scale)
+        bossWeakpoints.forEach(wp => {
+            if (wp.userData.wpActive) {
+                const s = 1 + Math.sin(frameCount * 0.2) * 0.15;
+                wp.scale.set(s, s, s);
+            }
+        });
+
+        // Invuln flash
+        if (bossInvulnTimer > 0) bossInvulnTimer -= fpsFactor;
+
+        // Attack timer
+        bossData.attackTimer = (bossData.attackTimer || 0) + fpsFactor;
+        if (bossData.attackTimer >= bossData.attackCooldown) {
+            bossData.attackTimer = 0;
+            bossAttack();
+        }
+
+        // Update projectiles
+        for (let i = bossProjectiles.length - 1; i >= 0; i--) {
+            const proj = bossProjectiles[i];
+            proj.position.x += proj.userData.vel.x * fpsFactor;
+            proj.position.y += proj.userData.vel.y * fpsFactor;
+            proj.position.z += proj.userData.vel.z * fpsFactor;
+            proj.userData.life -= fpsFactor;
+
+            // Hit player
+            const dx = Math.abs(proj.position.x - plane.position.x);
+            const dy = Math.abs(proj.position.y - plane.position.y);
+            const dz = Math.abs(proj.position.z - plane.position.z);
+            if (dx < 4 && dy < 4 && dz < 4) {
+                if (birdShieldTimer > 0) {
+                    // Le bouclier absorbe le projectile
+                    spawnParticles(proj.position, 0x00FFFF, 4);
+                } else {
+                    takeDamage(proj.userData.dmg);
+                }
+                scene.remove(proj);
+                bossProjectiles.splice(i, 1);
+                continue;
+            }
+
+            if (proj.userData.life <= 0 || proj.position.z > camera.position.z + 50) {
+                scene.remove(proj);
+                bossProjectiles.splice(i, 1);
+            }
+        }
+    }
+
+    /* ========== BULLET-BOSS COLLISION ========== */
+    function checkBulletBossCollision(bul) {
+        if (!activeBoss || !bossData || bossDefeated) return false;
+
+        const dx = Math.abs(bul.position.x - activeBoss.position.x);
+        const dy = Math.abs(bul.position.y - activeBoss.position.y);
+        const dz = Math.abs(bul.position.z - activeBoss.position.z);
+
+        // Check weakpoints first (higher priority)
+        for (const wp of bossWeakpoints) {
+            if (!wp.userData.wpActive) continue;
+            const wdx = Math.abs(bul.position.x - (activeBoss.position.x + wp.position.x * activeBoss.scale.x));
+            const wdy = Math.abs(bul.position.y - (activeBoss.position.y + wp.position.y * activeBoss.scale.y));
+            const wdz = Math.abs(bul.position.z - (activeBoss.position.z + wp.position.z * activeBoss.scale.z));
+            if (wdx < 4 && wdy < 4 && wdz < 5) {
+                spawnBossHitParticles(bul.position, wp.userData.wpColor, 8);
+                damageBoss(18, true, true);
+                return true;
+            }
+        }
+
+        // General hit (big hitbox for the whole boss)
+        const bossRadius = [14, 12, 22][bossData.idx];
+        if (dx < bossRadius && dy < 10 && dz < 12) {
+            spawnBossHitParticles(bul.position, 0xFF4400, 4);
+            damageBoss(8, false, false);
+            return true;
+        }
+        return false;
     }
 
     /* ========== MAIN GAME LOOP ========== */
@@ -2502,6 +3910,7 @@
             $('combo-timer-fill').style.transform = `scaleX(${comboTimer / COMBO_WINDOW})`;
             if (comboTimer <= 0) {
                 comboCount = 0; currentComboMultiplier = 1.0; overdriveLevel = 0;
+                comboMagRewardNext = 10; // reset mag reward threshold
                 $('combo-wrapper').style.opacity = 0;
                 $('combo-container').classList.remove('combo-overdrive');
                 $('combo-label-text').innerText = "COMBO !";
@@ -2514,13 +3923,26 @@
             drillTimer -= fpsFactor;
             drillMesh.rotation.z += 0.6 * fpsFactor;
             if (drillTimer <= 0) { drillMesh.visible = false; propeller.visible = true; }
+            // En mode boss : la vrille détruit les projectiles ennemis proches
+            if (gameMode === 'boss') {
+                for (let i = bossProjectiles.length - 1; i >= 0; i--) {
+                    const proj = bossProjectiles[i];
+                    const pdx = Math.abs(proj.position.x - plane.position.x);
+                    const pdy = Math.abs(proj.position.y - plane.position.y);
+                    const pdz = Math.abs(proj.position.z - plane.position.z);
+                    if (pdx < 18 && pdy < 10 && pdz < 25) {
+                        spawnParticles(proj.position, 0xFFFF00, 3);
+                        scene.remove(proj); bossProjectiles.splice(i, 1);
+                    }
+                }
+            }
         }
         if (invincibleTimer > 0) invincibleTimer -= fpsFactor;
 
         // === SPEED ===
         if (!isIntro) {
             let speedConfig = isTurboMode ? CONFIG.baseSpeed * 2 : CONFIG.baseSpeed;
-            let base = speedConfig * distMult;
+            let base = speedConfig * distMult * upgradeSpeedMult;
             let mult = 1.0 + overdriveLevel * 0.2;
             let boostAdd = 0;
             if (isBoosting && energy > 0) { boostAdd += 2.0; energy -= 0.25 * fpsFactor; }
@@ -2546,6 +3968,11 @@
         }
 
         // === PLAYER POSITION ===
+        // Soft wall limit: player cannot reach ±32 (the hard canyon wall).
+        // Movement is progressively clamped so the plane simply stops feeling input
+        // past this threshold — no damage, no bounce, no frustration.
+        const WALL_SOFT_LIMIT = 27; // 5 units of margin before the hard wall at ±32
+
         let targetPlayerOffset = 0;
         let targetY = 0;
 
@@ -2563,12 +3990,23 @@
             let xRange = window.innerWidth > window.innerHeight ? 65 : 45;
             targetPlayerOffset = mouseX * xRange;
             targetY = mouseY * 15;
+            // Clamp the desired position to the soft limit — input beyond this simply has no extra effect
+            targetPlayerOffset = Math.max(-WALL_SOFT_LIMIT, Math.min(WALL_SOFT_LIMIT, targetPlayerOffset));
         }
 
+        // Decay and cancel any bounce force that would push us past the soft limit
         bounceForce *= 0.9;
-        const smoothFactor = (isIntro ? 0.05 : 0.1) * fpsFactor;
+        if (playerLogicalX >  WALL_SOFT_LIMIT - 2 && bounceForce < 0) bounceForce = 0;
+        if (playerLogicalX < -WALL_SOFT_LIMIT + 2 && bounceForce > 0) bounceForce = 0;
+
+        const speedMobilityBonus = isIntro ? 0 : Math.min(0.1, (gameSpeed / CONFIG.baseSpeed - 1) * 0.025);
+        const smoothFactor = (isIntro ? 0.05 : (0.1 + speedMobilityBonus)) * fpsFactor;
         let prevLogicalX = playerLogicalX;
         playerLogicalX += (targetPlayerOffset - playerLogicalX) * smoothFactor + bounceForce;
+
+        // Hard safety clamp: even edge cases (high bounceForce etc.) cannot exceed the limit
+        playerLogicalX = Math.max(-WALL_SOFT_LIMIT, Math.min(WALL_SOFT_LIMIT, playerLogicalX));
+
         let moveDelta = playerLogicalX - prevLogicalX;
 
         plane.position.z -= gameSpeed * fpsFactor;
@@ -2588,18 +4026,7 @@
             }
         }
 
-        // === WALL COLLISION ===
-        if (!isIntro && Math.abs(playerLogicalX) > 32) {
-            if (invincibleTimer <= 0 && wallHitTimer <= 0) {
-                takeDamage(25);
-                wallHitTimer = 30;
-                bounceForce = playerLogicalX > 0 ? -12.0 : 12.0;
-                mouseX = 0;
-                spawnParticles(plane.position, 0x8B4513, 10);
-            } else if (invincibleTimer > 0) {
-                bounceForce = playerLogicalX > 0 ? -1.0 : 1.0;
-            }
-        }
+        // Wall collision removed — the soft limit above prevents reaching the walls.
 
         // === PLANE ROTATION ===
         let targetRotZ = controlMode === 'touch' ? -joystickInput.x * 0.8 : -moveDelta * 0.5;
@@ -2621,8 +4048,9 @@
         propeller.rotation.z += gameSpeed * 0.5 * fpsFactor;
 
         // === CAMERA ===
-        let baseFov = 60 + overdriveLevel * 5;
-        if (isBoosting) baseFov += 10;
+        // En mode boss : pas de zoom-out au boost (évite l'impression que le boss s'éloigne)
+        let baseFov = gameMode === 'boss' ? 62 : 60 + overdriveLevel * 5;
+        if (isBoosting && gameMode !== 'boss') baseFov += 10;
         camera.fov += (baseFov - camera.fov) * 0.05 * fpsFactor;
         camera.updateProjectionMatrix();
 
@@ -2636,9 +4064,24 @@
         const futureTrackX = getTrackOffset(plane.position.z - lookDist);
         camera.lookAt(futureTrackX + playerLogicalX, plane.position.y, plane.position.z - lookDist);
 
-        // === SPAWN RATE ===
-        let spawnRate = Math.max(5, 20 - distance / 1000);
-        if (Math.floor(frameCount) % Math.floor(spawnRate / fpsFactor) === 0) spawnObject();
+        // === SPAWN RATE (runner only) ===
+        if (gameMode === 'runner') {
+            let spawnRate = Math.max(5, 20 - distance / 1000);
+            if (Math.floor(frameCount) % Math.floor(spawnRate / fpsFactor) === 0) spawnObject();
+        }
+
+        // === BOSS UPDATE ===
+        if (gameMode === 'boss') {
+            updateBoss(fpsFactor);
+            // Spawn power-ups bénéfiques en mode boss (timer en secondes réelles)
+            if (!bossDefeated && !isIntro) {
+                bossPowerupTimer -= dt;
+                if (bossPowerupTimer <= 0) {
+                    spawnObject(true);
+                    bossPowerupTimer = 5 + Math.random() * 4; // toutes les 5-9 secondes
+                }
+            }
+        }
 
         // === LASER CANNON ===
         if (laserCooldown > 0) laserCooldown -= dt;
@@ -2782,11 +4225,17 @@
                 }
                 else if (t === 'ammo') {
                     itemsCollected++;
-                    laserAmmo = LASER_MAX_AMMO;
+                    // Gives a full magazine (reloads current clip if empty, else +1 mag stock)
+                    if (laserAmmo === 0) {
+                        laserAmmo = LASER_MAX_AMMO;
+                    } else {
+                        laserMagazines = Math.min(getMaxMags(), laserMagazines + 1);
+                    }
                     AudioSys.fuel();
                     spawnParticles(o.position, 0xFF6600, 10);
                     scene.remove(o); objects.splice(i, 1);
-                    spawnFloatingText("LASER x30", o.position, "#FF6600");
+                    spawnFloatingText("+1 CHARGEUR", o.position, "#FF6600");
+                    updateMagazineHUD();
                 }
                 else {
                     itemsCollected++;
@@ -2799,6 +4248,22 @@
             }
             else if (o.position.z > camera.position.z + 50) {
                 scene.remove(o); objects.splice(i, 1);
+            }
+        }
+
+        // === PARTICLES UPDATE ===
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            if (p.userData.vel) {
+                p.position.x += p.userData.vel.x * fpsFactor;
+                p.position.y += p.userData.vel.y * fpsFactor;
+                p.position.z += p.userData.vel.z * fpsFactor;
+            }
+            if (p.userData.maxLife !== undefined) {
+                p.userData.life -= fpsFactor;
+                const t = Math.max(0, p.userData.life / p.userData.maxLife);
+                p.material.opacity = (p.userData.initOpacity || 1.0) * t;
+                if (p.userData.life <= 0) { scene.remove(p); particles.splice(i, 1); }
             }
         }
 
