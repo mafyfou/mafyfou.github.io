@@ -150,6 +150,9 @@
         .style-shield .effect-bar-fill { background: #00FFFF; }
         .style-drill { border-color: #FFFF00; color: #FFFF00; }
         .style-drill .effect-bar-fill { background: #FFFF00; }
+        .style-autoaim { border-color: #FF0044; }
+        .style-autoaim .effect-label { color: #FF0044; }
+        .style-autoaim .effect-bar-fill { background: repeating-linear-gradient(45deg, #FF0044, #FF0044 10px, #FF4488 10px, #FF4488 20px); }
 
         /* === MOBILE CONTROLS === */
         #mobile-controls {
@@ -726,6 +729,10 @@
                 <div class="effect-label">VRILLE FORAGE</div>
                 <div class="effect-bar-bg"><div class="effect-bar-fill" id="fill-drill"></div></div>
             </div>
+            <div id="effect-autoaim" class="effect-row style-autoaim hidden">
+                <div class="effect-label">AUTO-AIM</div>
+                <div class="effect-bar-bg"><div class="effect-bar-fill" id="fill-autoaim"></div></div>
+            </div>
         </div>
 
         <div id="mobile-controls" class="hidden">
@@ -1165,18 +1172,18 @@
     }
 
     /* ========== LASER CANNON ========== */
-    const LASER_MAX_AMMO = 60;
-    const LASER_FIRE_RATE = 7.5; // shots per second (1.5x of original 5)
-    const LASER_BULLET_SPEED = 12;
-    const LASER_HIT_RADIUS = 4;
-    const LASER_HITS_TO_KILL = 3;
+    const LASER_MAX_AMMO = 40;
+    const LASER_FIRE_RATE = 5; // shots per second (1.5x of original 5)
+    const LASER_BULLET_SPEED = 25;
+    const LASER_HIT_RADIUS = 10;
+    const LASER_HITS_TO_KILL = 1;
     const LASER_MAX_MAGAZINES_BASE = 3;
     let laserAmmo = LASER_MAX_AMMO;
     let laserMagazines = 0; // extra magazines (each = LASER_MAX_AMMO bullets)
     let laserCooldown = 0;
     let isShooting = false;
     let bullets = [];
-    const BULLET_GEO = new THREE.BoxGeometry(0.4, 0.4, 1.5);
+    const BULLET_GEO = new THREE.BoxGeometry(0.8, 0.8, 3.0);
     const BULLET_MAT = new THREE.MeshBasicMaterial({ color: 0x00FF88, emissive: 0x00FF88 });
 
     /* ========== GAME MODE ========== */
@@ -1754,6 +1761,7 @@ function openAudioSettings() {
     let invincibleTimer = 0; const INVINCIBLE_DURATION = 400;
     let birdShieldTimer = 0; const BIRD_SHIELD_DURATION = 600;
     let drillTimer = 0;      const DRILL_DURATION = 600;
+    let homingTimer = 0;     const HOMING_DURATION = 480;
     let comboCount = 0, comboTimer = 0, currentComboMultiplier = 1.0;
     let overdriveLevel = 0;
     const COMBO_WINDOW = 600;
@@ -2396,8 +2404,8 @@ function openAudioSettings() {
         if (isIntro) return;
         const thresholds = getSpawnThresholds(distance);
         const r = Math.random();
-        // En mode boss : power-ups entre le joueur et le boss (boss est à -160)
-        const spawnZ = bossMode ? plane.position.z - 70 : plane.position.z - 400;
+        // En mode boss : power-ups spawnent loin devant (comme en runner), joueur a le temps de réagir
+        const spawnZ = bossMode ? plane.position.z - 350 : plane.position.z - 400;
         const trackCenter = getTrackOffset(spawnZ);
 
         if (!bossMode) {
@@ -2423,9 +2431,8 @@ function openAudioSettings() {
         // Standard objects
         let type = 'cloud';
         if (bossMode) {
-            // En mode boss : uniquement des objets bénéfiques, pas d'obstacles
-            // Pondération : soins > énergie > munitions > autres
-            const pool = ['wrench','wrench','wrench','fuel','fuel','ammo','ammo','rocket','shield','drill'];
+            // En mode boss : tous les power-ups bénéfiques à poids égal + autoaim
+            const pool = ['wrench','fuel','ammo','rocket','missile','drill','autoaim'];
             type = pool[Math.floor(Math.random() * pool.length)];
         } else {
             if      (r < thresholds.bird)    type = 'bird';
@@ -2554,6 +2561,15 @@ function openAudioSettings() {
                 m.add(createVoxelBox(1.4, 0.4, 1.0, 0xFFAA00, 0, -0.8, 0));
                 addGlow(m, 0xFF6600);
             }
+            else if (type === 'autoaim') {
+                // Viseur auto-aim (cercle + croix rouge)
+                m.add(createVoxelBox(2.5, 2.5, 0.3, 0xFF0044, 0, 0, 0));
+                m.add(createVoxelBox(1.5, 1.5, 0.4, 0x000000, 0, 0, 0));
+                m.add(createVoxelBox(0.3, 2.8, 0.5, 0xFF0044, 0, 0, 0));
+                m.add(createVoxelBox(2.8, 0.3, 0.5, 0xFF0044, 0, 0, 0));
+                m.add(createVoxelBox(0.5, 0.5, 0.5, 0xFF4444, 0, 0, 0, true));
+                addGlow(m, 0xFF0044);
+            }
 
             if (!m.userData) m.userData = {};
             m.userData.type = type;
@@ -2562,15 +2578,23 @@ function openAudioSettings() {
 
         // Position
         let spawnX = (Math.random() - 0.5) * 60;
-        const h1 = getTerrainHeight(spawnX, spawnZ);
-        const h2 = getTerrainHeight(spawnX - 2, spawnZ);
-        const h3 = getTerrainHeight(spawnX + 2, spawnZ);
-        const safeH = Math.max(h1, h2, h3);
-        let spawnY = Math.max(safeH + 4, Math.random() * 10 - 2);
+        let spawnY;
 
-        if (type === 'balloon' || (type === 'cloud' && Math.random() > 0.5)) {
-            spawnY = safeH + 22;
-            spawnX = (Math.random() - 0.5) * 32;
+        if (bossMode) {
+            // En boss mode : hauteur fixe autour du joueur, visible et atteignable
+            spawnX = (Math.random() - 0.5) * 40;
+            spawnY = plane.position.y + (Math.random() - 0.5) * 8;
+        } else {
+            const h1 = getTerrainHeight(spawnX, spawnZ);
+            const h2 = getTerrainHeight(spawnX - 2, spawnZ);
+            const h3 = getTerrainHeight(spawnX + 2, spawnZ);
+            const safeH = Math.max(h1, h2, h3);
+            spawnY = Math.max(safeH + 4, Math.random() * 10 - 2);
+
+            if (type === 'balloon' || (type === 'cloud' && Math.random() > 0.5)) {
+                spawnY = safeH + 22;
+                spawnX = (Math.random() - 0.5) * 32;
+            }
         }
 
         m.userData.relativeX = spawnX;
@@ -2634,12 +2658,25 @@ function openAudioSettings() {
         if (t === 'bridge') return dx < 35 && dy < 2 && dz < 2;
 
         let hitX = 5, hitY = 2.5, hitZ = 3;
-        if (['fuel', 'wrench', 'rocket', 'missile', 'drill', 'ammo', 'cloud'].includes(t)) { hitX = 8; hitY = 5; hitZ = 5; }
+        if (['fuel', 'wrench', 'rocket', 'missile', 'drill', 'ammo', 'autoaim', 'cloud'].includes(t)) { hitX = 8; hitY = 5; hitZ = 5; }
         if (t === 'balloon') { hitX = 4; hitY = 6; hitZ = 4; }
         return dx < hitX && dy < hitY && dz < hitZ;
     }
 
     /* ========== LASER CANNON ========== */
+    function getHomingTarget() {
+        if (!activeBoss || !bossData || bossDefeated) return null;
+        const _wpos = new THREE.Vector3();
+        let best = null, bestDist = Infinity;
+        for (const wp of bossWeakpoints) {
+            if (!wp.userData.wpActive) continue;
+            wp.getWorldPosition(_wpos);
+            const d = plane.position.distanceTo(_wpos);
+            if (d < bestDist) { bestDist = d; best = _wpos.clone(); }
+        }
+        return best || activeBoss.position.clone();
+    }
+
     function fireBullet() {
         if (laserAmmo <= 0 || !isPlaying || isPaused || isIntro) return;
         laserAmmo--;
@@ -2648,19 +2685,25 @@ function openAudioSettings() {
         const bullet = new THREE.Mesh(BULLET_GEO, BULLET_MAT.clone());
         bullet.position.copy(plane.position);
         bullet.position.z -= 5;
-        // Inherit the plane's forward direction
-        const dir = new THREE.Vector3(0, 0, -1);
-        dir.applyQuaternion(plane.quaternion);
-        // In boss fight mode bullets must always outrun the player/boss regardless of boost.
-        // We add the current gameSpeed so the bullet's world velocity is always faster than
-        // the player's own -Z movement, guaranteeing it reaches the boss in front.
+
+        const isHoming = homingTimer > 0 && gameMode === 'boss';
+        let dir;
+        if (isHoming) {
+            const target = getHomingTarget();
+            dir = target ? target.sub(bullet.position).normalize() : new THREE.Vector3(0, 0, -1);
+            bullet.material.color.setHex(0xFF0044);
+        } else {
+            dir = new THREE.Vector3(0, 0, -1);
+            dir.applyQuaternion(plane.quaternion);
+        }
+
         const bulletSpeed = gameMode === 'boss'
             ? Math.max(LASER_BULLET_SPEED, gameSpeed + LASER_BULLET_SPEED)
             : LASER_BULLET_SPEED;
-        bullet.userData = { vel: dir.normalize().multiplyScalar(bulletSpeed) };
-        // Add a glow trail
+        bullet.userData = { vel: dir.normalize().multiplyScalar(bulletSpeed), homing: isHoming };
+        const trailColor = isHoming ? 0xFF0044 : 0x00FF88;
         const glowGeo = new THREE.BoxGeometry(0.2, 0.2, 3.0);
-        const glowMat = new THREE.MeshBasicMaterial({ color: 0x00FF88, transparent: true, opacity: 0.3 });
+        const glowMat = new THREE.MeshBasicMaterial({ color: trailColor, transparent: true, opacity: 0.3 });
         bullet.add(new THREE.Mesh(glowGeo, glowMat));
         scene.add(bullet);
         bullets.push(bullet);
@@ -2671,6 +2714,15 @@ function openAudioSettings() {
 
         for (let b = bullets.length - 1; b >= 0; b--) {
             const bul = bullets[b];
+            // Guidage en vol pour les balles homing
+            if (bul.userData.homing && gameMode === 'boss') {
+                const target = getHomingTarget();
+                if (target) {
+                    const speed = bul.userData.vel.length();
+                    const desired = target.clone().sub(bul.position).normalize();
+                    bul.userData.vel.lerp(desired.multiplyScalar(speed), 0.12 * fpsFactor);
+                }
+            }
             bul.position.x += bul.userData.vel.x * fpsFactor;
             bul.position.y += bul.userData.vel.y * fpsFactor;
             bul.position.z += bul.userData.vel.z * fpsFactor;
@@ -2711,6 +2763,7 @@ function openAudioSettings() {
                             let pts = Math.floor((t === 'balloon' ? 1000 : 500) * currentComboMultiplier * timeMultiplier);
                             score += pts;
                             enemiesKilled++;
+                            if (gameMode === 'runner') addCoins(t === 'balloon' ? 2 : 1);
                             triggerCombo();
                             checkComboMagReward();
                             AudioSys.smash();
@@ -2849,7 +2902,7 @@ function openAudioSettings() {
 
         applyUpgrades();
         score = 0; distance = 0; health = upgradeMaxHealth; energy = upgradeMaxEnergy;
-        invincibleTimer = 0; birdShieldTimer = 0; drillTimer = 0;
+        invincibleTimer = 0; birdShieldTimer = 0; drillTimer = 0; homingTimer = 0;
         comboCount = 0; comboTimer = 0; currentComboMultiplier = 1.0; overdriveLevel = 0;
 
         $('combo-wrapper').style.opacity = 0;
@@ -2909,6 +2962,11 @@ function openAudioSettings() {
         AudioSys.drill();
         propeller.visible = false;
         drillMesh.visible = true;
+    }
+
+    function activateAutoAim() {
+        homingTimer = HOMING_DURATION;
+        AudioSys.boost();
     }
 
     function takeDamage(amount) {
@@ -3056,7 +3114,8 @@ function openAudioSettings() {
         const effects = [
             { el: 'effect-rocket', fill: 'fill-rocket', timer: invincibleTimer, dur: INVINCIBLE_DURATION, overlay: 'speed-overlay' },
             { el: 'effect-shield', fill: 'fill-shield', timer: birdShieldTimer, dur: BIRD_SHIELD_DURATION, overlay: 'shield-overlay' },
-            { el: 'effect-drill',  fill: 'fill-drill',  timer: drillTimer,      dur: DRILL_DURATION,       overlay: null }
+            { el: 'effect-drill',    fill: 'fill-drill',    timer: drillTimer,   dur: DRILL_DURATION,    overlay: null },
+            { el: 'effect-autoaim', fill: 'fill-autoaim', timer: homingTimer,   dur: HOMING_DURATION,   overlay: null }
         ];
         effects.forEach(({ el, fill, timer, dur, overlay }) => {
             if (timer > 0) {
@@ -3213,7 +3272,7 @@ function openAudioSettings() {
         g.add(new THREE.Mesh(glowGeo, glowMat));
 
         // Weakpoints
-        const wpCrown = createWeakpoint(2.2, 0xFFFF00, 0, 7.5, -3.5);
+        const wpCrown = createWeakpoint(2.2, 0xFFFF00, 0, 4.5, -3.5);
         const wpOrb   = createWeakpoint(2.0, 0xFF6600, 7, 4.5, -1);
         const wpChest = createWeakpoint(2.5, 0xFF0055, 0, 0, -3.5);
         g.add(wpCrown, wpOrb, wpChest);
@@ -3333,11 +3392,12 @@ function openAudioSettings() {
         g.add(new THREE.Mesh(glowGeo, glowMat));
 
         // Weakpoints (5 for 5 phases)
-        const wpCore    = createWeakpoint(3.0, 0x00FFCC, 0, 12, 0);     // command center
-        const wpEngineL = createWeakpoint(2.5, 0xFF4400, -14, 0, 0);    // left cannon
-        const wpEngineR = createWeakpoint(2.5, 0xFF4400, 14, 0, 0);     // right cannon
-        const wpBeam    = createWeakpoint(2.5, 0x00AAFF, 0, -5, 0);     // tractor beam
-        const wpDome    = createWeakpoint(3.5, 0xFF00FF, 0, 9.5, 0);    // dome shield
+        const wpCore    = createWeakpoint(4.5, 0x00FFCC, 0, 12, 0);      // command center
+        // rotation.y = Math.PI inverse X local → L à +14, R à -14 pour être du bon côté joueur
+        const wpEngineL = createWeakpoint(4.0, 0xFF4400, 14, 0, 0);     // left cannon (player view)
+        const wpEngineR = createWeakpoint(4.0, 0xFF4400, -14, 0, 0);    // right cannon (player view)
+        const wpBeam    = createWeakpoint(4.0, 0x00AAFF, 0, -5, 0);     // tractor beam
+        const wpDome    = createWeakpoint(5.0, 0xFF00FF, 0, 9.5, 0);    // dome shield
         g.add(wpCore, wpEngineL, wpEngineR, wpBeam, wpDome);
         bossWeakpoints = [wpCore, wpEngineL, wpEngineR, wpBeam, wpDome];
 
@@ -3619,14 +3679,14 @@ function openAudioSettings() {
 
         if (phase === 0) {
             // Rainbow beam — single aimed shot
-            spawnBossProjectile(bp.x, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.45, 0xFF69B4, 30, 1.5);
+            spawnBossProjectile(bp.x, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.45, 0xFF69B4, 22, 1.5);
         } else if (phase === 1) {
             // Spread rainbow rays
             const rbCols = [0xFF0000, 0xFF8800, 0xFFFF00, 0x00FF00, 0x0088FF, 0xFF00FF, 0xFF69B4];
             for (let i = 0; i < rbCols.length; i++) {
                 const spread = (i - 3) * 3;
                 spawnBossProjectile(bp.x, bp.y + spread*0.3, bp.z + 5,
-                    pp.x + spread, pp.y, pp.z, 0.4, rbCols[i], 25, 1.2);
+                    pp.x + spread, pp.y, pp.z, 0.4, rbCols[i], 18, 1.2);
             }
         } else if (phase === 2) {
             // Spiral rainbow barrage
@@ -3635,7 +3695,7 @@ function openAudioSettings() {
                 const angle = (i / rbCols2.length) * Math.PI * 2 + (frameCount * 0.05);
                 const sx = bp.x + Math.cos(angle) * 6;
                 const sy = bp.y + Math.sin(angle) * 4;
-                spawnBossProjectile(sx, sy, bp.z + 5, pp.x, pp.y, pp.z, 0.5, rbCols2[i], 30, 1.3);
+                spawnBossProjectile(sx, sy, bp.z + 5, pp.x, pp.y, pp.z, 0.5, rbCols2[i], 25, 1.3);
             }
             // Also spawn a balloon for combo refill
             if (Math.random() < 0.4) {
@@ -3657,8 +3717,8 @@ function openAudioSettings() {
 
         if (phase === 0) {
             // Twin lasers from side cannons
-            spawnBossProjectile(bp.x - 14, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0xFF0044, 35, 1.5);
-            spawnBossProjectile(bp.x + 14, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0xFF0044, 35, 1.5);
+            spawnBossProjectile(bp.x - 14, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0xFF0044, 26, 1.5);
+            spawnBossProjectile(bp.x + 14, bp.y, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0xFF0044, 26, 1.5);
         } else if (phase === 1) {
             // Deploy alien laser unit (like infinite runner)
             const alienU = createAlienLaserUnit();
@@ -3667,7 +3727,7 @@ function openAudioSettings() {
             scene.add(alienU); objects.push(alienU); bossSpawnedObstacles.push(alienU);
             // Also laser burst
             for (let i = -1; i <= 1; i++) {
-                spawnBossProjectile(bp.x + i*8, bp.y, bp.z + 5, pp.x + i*5, pp.y, pp.z, 0.55, 0x00FF44, 30, 1.2);
+                spawnBossProjectile(bp.x + i*8, bp.y, bp.z + 5, pp.x + i*5, pp.y, pp.z, 0.55, 0x00FF44, 22, 1.2);
             }
         } else if (phase === 2) {
             // Tractor beam + drone wave: spawn 2 balloons close to player
@@ -3683,7 +3743,7 @@ function openAudioSettings() {
             // Laser cross
             for (let i = -2; i <= 2; i++) {
                 if (i === 0) continue;
-                spawnBossProjectile(bp.x, bp.y + i*3, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0x4400FF, 35, 1.3);
+                spawnBossProjectile(bp.x, bp.y + i*3, bp.z + 5, pp.x, pp.y, pp.z, 0.5, 0x4400FF, 26, 1.3);
             }
         } else if (phase === 3) {
             // Drone swarm (alien laser units) + fast lasers
@@ -3694,14 +3754,14 @@ function openAudioSettings() {
             for (let i = 0; i < 6; i++) {
                 const angle = (i / 6) * Math.PI * 2;
                 spawnBossProjectile(bp.x + Math.cos(angle)*12, bp.y + Math.sin(angle)*6, bp.z+5,
-                    pp.x, pp.y, pp.z, 0.6, 0xFF0044, 40, 1.4);
+                    pp.x, pp.y, pp.z, 0.6, 0xFF0044, 28, 1.4);
             }
         } else if (phase === 4) {
             // Omega barrage: 8 lasers + 2 aliens + bridge
             for (let i = 0; i < 8; i++) {
                 const angle = (i / 8) * Math.PI * 2 + frameCount * 0.03;
                 spawnBossProjectile(bp.x + Math.cos(angle)*10, bp.y + Math.sin(angle)*6, bp.z+5,
-                    pp.x, pp.y, pp.z, 0.65, i%2===0 ? 0xFF0044 : 0x00FF88, 45, 1.5);
+                    pp.x, pp.y, pp.z, 0.65, i%2===0 ? 0xFF0044 : 0x00FF88, 30, 1.5);
             }
             if (Math.random() < 0.3) {
                 const bridge = createBridge();
@@ -3813,10 +3873,13 @@ function openAudioSettings() {
         // Check weakpoints first (higher priority)
         for (const wp of bossWeakpoints) {
             if (!wp.userData.wpActive) continue;
-            const wdx = Math.abs(bul.position.x - (activeBoss.position.x + wp.position.x * activeBoss.scale.x));
-            const wdy = Math.abs(bul.position.y - (activeBoss.position.y + wp.position.y * activeBoss.scale.y));
-            const wdz = Math.abs(bul.position.z - (activeBoss.position.z + wp.position.z * activeBoss.scale.z));
-            if (wdx < 4 && wdy < 4 && wdz < 5) {
+            // getWorldPosition tient compte de rotation.y = Math.PI du boss
+            const _wpWorld = new THREE.Vector3();
+            wp.getWorldPosition(_wpWorld);
+            const wdx = Math.abs(bul.position.x - _wpWorld.x);
+            const wdy = Math.abs(bul.position.y - _wpWorld.y);
+            const wdz = Math.abs(bul.position.z - _wpWorld.z);
+            if (wdx < 5.5 && wdy < 5.5 && wdz < 7) {
                 spawnBossHitParticles(bul.position, wp.userData.wpColor, 8);
                 damageBoss(18, true, true);
                 return true;
@@ -3938,6 +4001,7 @@ function openAudioSettings() {
             }
         }
         if (invincibleTimer > 0) invincibleTimer -= fpsFactor;
+        if (homingTimer > 0) homingTimer -= fpsFactor;
 
         // === SPEED ===
         if (!isIntro) {
@@ -3957,7 +4021,7 @@ function openAudioSettings() {
             plane.traverse(child => {
                 if (child.isMesh) {
                     child.material.transparent = true;
-                    child.material.opacity = 0.6;
+                    child.material.opacity = 0.2;
                 }
             });
         }
@@ -3987,7 +4051,7 @@ function openAudioSettings() {
         } else if (isInputLocked) {
             targetPlayerOffset = 0; targetY = 0;
         } else {
-            let xRange = window.innerWidth > window.innerHeight ? 65 : 45;
+            let xRange = window.innerWidth > window.innerHeight ? 80 : 45;
             targetPlayerOffset = mouseX * xRange;
             targetY = mouseY * 15;
             // Clamp the desired position to the soft limit — input beyond this simply has no extra effect
@@ -4057,12 +4121,22 @@ function openAudioSettings() {
         screenShake *= 0.9;
         if (screenShake < 0.01) screenShake = 0;
         camera.position.x += (plane.position.x - camera.position.x) * 0.35 * fpsFactor + (Math.random() - 0.5) * screenShake;
-        camera.position.y = 10 + plane.position.y * 0.3 + (Math.random() - 0.5) * screenShake;
-        camera.position.z = plane.position.z + 28;
 
-        const lookDist = 40;
-        const futureTrackX = getTrackOffset(plane.position.z - lookDist);
-        camera.lookAt(futureTrackX + playerLogicalX, plane.position.y, plane.position.z - lookDist);
+        if (gameMode === 'boss') {
+            // Caméra toujours au-dessus de l'avion → l'avion reste en haut de l'écran,
+            // le joueur voit ses tirs et les weakpoints devant lui
+            camera.position.y = plane.position.y + 14 + (Math.random() - 0.5) * screenShake;
+            camera.position.z = plane.position.z + 30;
+            const lookDist = 40;
+            const futureTrackX = getTrackOffset(plane.position.z - lookDist);
+            camera.lookAt(futureTrackX + playerLogicalX, plane.position.y - 6, plane.position.z - lookDist);
+        } else {
+            camera.position.y = 10 + plane.position.y * 0.3 + (Math.random() - 0.5) * screenShake;
+            camera.position.z = plane.position.z + 28;
+            const lookDist = 40;
+            const futureTrackX = getTrackOffset(plane.position.z - lookDist);
+            camera.lookAt(futureTrackX + playerLogicalX, plane.position.y, plane.position.z - lookDist);
+        }
 
         // === SPAWN RATE (runner only) ===
         if (gameMode === 'runner') {
@@ -4078,7 +4152,7 @@ function openAudioSettings() {
                 bossPowerupTimer -= dt;
                 if (bossPowerupTimer <= 0) {
                     spawnObject(true);
-                    bossPowerupTimer = 5 + Math.random() * 4; // toutes les 5-9 secondes
+                    bossPowerupTimer = 1 + Math.random() * 2; // toutes les 5-9 secondes
                 }
             }
         }
@@ -4103,8 +4177,10 @@ function openAudioSettings() {
                     o.position.y -= 1.0 * fpsFactor;
                     o.rotation.x += 0.2 * fpsFactor;
                 } else {
-                    o.userData.wings[0].rotation.z = Math.sin(frameCount * 0.5);
-                    o.userData.wings[1].rotation.z = -Math.sin(frameCount * 0.5);
+                    if (o.userData.wings && o.userData.wings.length >= 2) {
+                        o.userData.wings[0].rotation.z = Math.sin(frameCount * 0.5);
+                        o.userData.wings[1].rotation.z = -Math.sin(frameCount * 0.5);
+                    }
                     o.position.z += 0.4 * fpsFactor;
                     o.position.y += Math.sin(frameCount * 0.1) * 0.02 * fpsFactor;
                     if (o.userData.isMoving) {
@@ -4112,7 +4188,7 @@ function openAudioSettings() {
                     }
                 }
             }
-            else if (['fuel', 'wrench', 'rocket', 'missile', 'drill', 'ammo'].includes(t)) {
+            else if (['fuel', 'wrench', 'rocket', 'missile', 'drill', 'ammo', 'autoaim'].includes(t)) {
                 o.rotation.y += 0.05 * fpsFactor;
                 let pulse = Math.sin(frameCount * 0.15) * 0.25;
                 let s = o.userData.baseScale + pulse;
@@ -4142,6 +4218,7 @@ function openAudioSettings() {
                     if (invincibleTimer > 0 || (isBoosting && energy > 0)) {
                         let pts = Math.floor(500 * currentComboMultiplier * timeMultiplier);
                         score += pts; enemiesKilled++;
+                        if (gameMode === 'runner') addCoins(1);
                         triggerCombo(); AudioSys.smash();
                         spawnParticles(o.position, 0xff3333, 10);
                         o.userData.dead = true;
@@ -4149,6 +4226,7 @@ function openAudioSettings() {
                     } else if (birdShieldTimer > 0) {
                         let pts = Math.floor(200 * currentComboMultiplier * timeMultiplier);
                         score += pts;
+                        if (gameMode === 'runner') addCoins(1);
                         triggerCombo(); AudioSys.hit();
                         o.userData.dead = true;
                         spawnFloatingText("+" + pts, o.position, "#FFD700");
@@ -4160,6 +4238,7 @@ function openAudioSettings() {
                     if (invincibleTimer > 0 || (isBoosting && energy > 0)) {
                         let pts = Math.floor(1000 * currentComboMultiplier * timeMultiplier);
                         score += pts; enemiesKilled++;
+                        if (gameMode === 'runner') addCoins(2);
                         triggerCombo(); AudioSys.smash();
                         spawnParticles(o.position, 0xFFFFFF, 20);
                         scene.remove(o); objects.splice(i, 1);
@@ -4167,6 +4246,7 @@ function openAudioSettings() {
                     } else if (drillTimer > 0) {
                         let pts = Math.floor(1000 * currentComboMultiplier * timeMultiplier);
                         score += pts;
+                        if (gameMode === 'runner') addCoins(2);
                         triggerCombo(); AudioSys.smash();
                         spawnParticles(o.position, 0xFFFFFF, 20);
                         scene.remove(o); objects.splice(i, 1);
@@ -4176,11 +4256,16 @@ function openAudioSettings() {
                     }
                 }
                 else if (t === 'alien_laser') {
-                    if (invincibleTimer <= 0) { takeDamage(50); plane.position.z += 2; }
+                    if (invincibleTimer <= 0) {
+                        const alienDmg = gameMode === 'boss' ? Math.floor(upgradeMaxHealth / 3) : 50;
+                        takeDamage(alienDmg);
+                        plane.position.z += 2;
+                    }
                 }
                 else if (t === 'bridge') {
                     if (invincibleTimer > 0) {
                         score += 500;
+                        if (gameMode === 'runner') addCoins(3);
                         spawnParticles(o.position, 0x8B4513, 20);
                         scene.remove(o); objects.splice(i, 1);
                         spawnFloatingText("+500", o.position, "#FFD700");
@@ -4237,10 +4322,18 @@ function openAudioSettings() {
                     spawnFloatingText("+1 CHARGEUR", o.position, "#FF6600");
                     updateMagazineHUD();
                 }
+                else if (t === 'autoaim') {
+                    itemsCollected++;
+                    activateAutoAim();
+                    spawnParticles(o.position, 0xFF0044, 10);
+                    scene.remove(o); objects.splice(i, 1);
+                    spawnFloatingText("AUTO-AIM!", o.position, "#FF0044");
+                }
                 else {
                     itemsCollected++;
                     let pts = Math.floor(100 * currentComboMultiplier * timeMultiplier);
                     score += pts; AudioSys.coin();
+                    if (gameMode === 'runner') addCoins(1);
                     spawnParticles(o.position, CONFIG.colors.cloud, 5);
                     scene.remove(o); objects.splice(i, 1);
                     spawnFloatingText("+" + pts, o.position, "#FFD700");
