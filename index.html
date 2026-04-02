@@ -3723,7 +3723,7 @@ function openAudioSettings() {
             // Deploy alien laser unit (like infinite runner)
             const alienU = createAlienLaserUnit();
             alienU.userData = { type:'alien_laser', baseScale:1, relativeX: (Math.random()-0.5)*40 };
-            alienU.position.set(pp.x + (Math.random()-0.5)*30, 50, pp.z - 80);
+            alienU.position.set(pp.x + (Math.random()-0.5)*30, 50, pp.z - 400);
             scene.add(alienU); objects.push(alienU); bossSpawnedObstacles.push(alienU);
             // Also laser burst
             for (let i = -1; i <= 1; i++) {
@@ -3749,7 +3749,7 @@ function openAudioSettings() {
             // Drone swarm (alien laser units) + fast lasers
             const alienU2 = createAlienLaserUnit();
             alienU2.userData = { type:'alien_laser', baseScale:1, relativeX: (Math.random()-0.5)*30 };
-            alienU2.position.set(pp.x + (Math.random()-0.5)*20, 50, pp.z - 70);
+            alienU2.position.set(pp.x + (Math.random()-0.5)*20, 50, pp.z - 400);
             scene.add(alienU2); objects.push(alienU2); bossSpawnedObstacles.push(alienU2);
             for (let i = 0; i < 6; i++) {
                 const angle = (i / 6) * Math.PI * 2;
